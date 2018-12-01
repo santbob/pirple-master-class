@@ -11,17 +11,17 @@ const fs = require('fs');
 
 // Setting up local config
 const config = {
-  httpPort : 3000,
+  httpPort: 3000,
   httpsPort: 3001
 };
 
 // setup handlers
 const handlers = {
-  'hello': function(req, res) {
-    res.end('Vanakam Ulagam!');
+  'hello': function(callback) {
+    callback(200, {'message': 'Vanakam Ulagam!'});
   },
-  'notFound': function(req, res) {
-    res.end('Hi Stranger, you are at a wrong path');
+  'notFound': function(callback) {
+    callback(404);
   }
 }
 
@@ -32,20 +32,40 @@ const router = {
 }
 
 // Unified server function for both http and https servers
-const unifiedServer = function(req, res) {
-  // Parse the url
-  var parsedUrl = url.parse(req.url, true);
+const unifiedServer = function(req, resp) {
 
-  // Get the path
-  var path = parsedUrl.pathname;
-  var trimmedPath = path.replace(/^\/+|\/+$/g, '');
+  //get the url and parse it
+  const parsedUrl = url.parse(req.url, true);
 
-  // Check the router for a matching path for a handler. If one is not found, use the notFound handler instead.
-  var chosenHandler = typeof(router[trimmedPath]) !== 'undefined'
+  //get the path
+  const path = parsedUrl.pathname;
+  const trimmedPath = path.replace(/^\/+|\/+$/g, '');
+
+  //choose the handler the request should go to, if not found use the not found handler
+  const choosenHandler = typeof(router[trimmedPath]) !== 'undefined'
     ? router[trimmedPath]
     : handlers.notFound;
 
-  chosenHandler(req, res);
+  // Route the request to the handler specified in the router
+  choosenHandler(function(status, payload) {
+    //use sensible defaults for status code and payload if not present
+    statusCode = typeof(statusCode) === 'number'
+      ? statusCode
+      : 200;
+    payload = typeof(payload) === 'object'
+      ? payload
+      : {};
+
+    // Convert the payload to a string
+    const payloadString = JSON.stringify(payload);
+
+    // Return the response
+    // write the status of the response in the response header
+    resp.setHeader('Content-Type', 'application/json');
+    resp.writeHead(statusCode);
+    //send the response string
+    resp.end(payloadString);
+  });
 }
 
 // Instantiate the HTTP Server
