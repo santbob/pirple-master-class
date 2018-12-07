@@ -6,6 +6,7 @@
 const _data = require('./data');
 const helpers = require('./helpers');
 const config = require('./config');
+const pizzaMenuData = require('./pizzaMenuData');
 
 // Define the handlers
 var handlers = {};
@@ -350,13 +351,7 @@ handlers.menu = function(data, callback) {
     if (id && email) {
       verifyToken(id, email, function(isTokenValid) {
         if (isTokenValid) {
-          _data.read('menu', 'pizzaMenu', function(err, data) {
-            if (!err && data) {
-              callback(200, data);
-            } else {
-              callback(404);
-            }
-          });
+          callback(200, pizzaMenuData);
         } else {
           callback(403, {'Error': 'Invalid token'})
         }
@@ -368,6 +363,56 @@ handlers.menu = function(data, callback) {
     callback(405);
   }
 }
+
+handlers.cart = function(data, callback) {
+  var acceptableMethods = ['post', 'get'];
+  if (acceptableMethods.indexOf(data.method) > -1) {
+    _cart[data.method](data, callback);
+  } else {
+    callback(405);
+  }
+}
+
+const _cart = {};
+
+// Required data: email, password
+// Optional data: none
+_cart.post = function(data, callback) {
+  const email = typeof(data.headers.email) == 'string' && data.headers.email.trim().length > 0
+    ? data.headers.email.trim()
+    : false;
+  const id = typeof(data.headers.token) == 'string' && data.headers.token.trim().length == 20
+    ? data.headers.token.trim()
+    : false;
+
+  const items = typeof(data.payload.items) == 'array'
+    ? data.payload.items
+    : false;
+
+  if (id && email) {
+    verifyToken(id, email, function(isTokenValid) {
+      if (isTokenValid) {
+        _data.read('users', email, function(err, data) {
+          if (!err && data) {
+            data.cart = data.cart || [];
+            items.forEach(function(item){
+              const itemData = {
+                "crust": []
+              }
+            });
+            callback(200, data);
+          } else {
+            callback(404);
+          }
+        });
+      } else {
+        callback(403, {'Error': 'Invalid token'})
+      }
+    });
+  } else {
+    callback(404, {'Error': 'Missing required field'});
+  }
+};
 
 handlers.notFound = function(data, callback) {
   callback(404);
