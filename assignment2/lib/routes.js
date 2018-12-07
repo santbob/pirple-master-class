@@ -10,7 +10,8 @@ const handlers = require('./handlers');
 const routes = {
   'users': handlers.users,
   'tokens': handlers.tokens,
-  'menu': handlers.menu
+  'menu': handlers.menu,
+  'cart': handlers.cart
 };
 
 // export the routes module

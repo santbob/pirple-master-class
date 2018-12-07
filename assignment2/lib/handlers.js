@@ -71,19 +71,27 @@ _users.post = function(data, callback) {
 // Required data: email
 // Optional data: none
 _users.get = function(data, callback) {
-  var email = typeof(data.queryStringObject.email) == 'string'
+  const email = typeof(data.queryStringObject.email) == 'string'
     ? data.queryStringObject.email.trim()
     : false;
-  var id = typeof(data.headers.token) == 'string' && data.headers.token.trim().length == 20
+  const id = typeof(data.headers.token) == 'string' && data.headers.token.trim().length == 20
     ? data.headers.token.trim()
     : false;
-  if (email && id) {
-    verifyToken(id, email, function(isTokenValid) {
+  _users.load(email, id, function(status, response) {
+    if (status == 200) {
+      // Remove the hashed password from the user user object before returning it to the requester
+      delete response.hashedPassword;
+    }
+    callback(status, response);
+  });
+}
+
+_users.load = function(email, token, callback) {
+  if (email && token) {
+    verifyToken(token, email, function(isTokenValid) {
       if (isTokenValid) {
         _data.read('users', email, function(err, data) {
           if (!err && data) {
-            // Remove the hashed password from the user user object before returning it to the requester
-            delete data.hashedPassword;
             callback(200, data);
           } else {
             callback(404);
@@ -365,7 +373,7 @@ handlers.menu = function(data, callback) {
 }
 
 handlers.cart = function(data, callback) {
-  var acceptableMethods = ['post', 'get'];
+  var acceptableMethods = ['post', 'get', 'delete'];
   if (acceptableMethods.indexOf(data.method) > -1) {
     _cart[data.method](data, callback);
   } else {
@@ -375,7 +383,7 @@ handlers.cart = function(data, callback) {
 
 const _cart = {};
 
-// Required data: email, password
+// Required data: email, password, items array
 // Optional data: none
 _cart.post = function(data, callback) {
   const email = typeof(data.headers.email) == 'string' && data.headers.email.trim().length > 0
@@ -385,22 +393,70 @@ _cart.post = function(data, callback) {
     ? data.headers.token.trim()
     : false;
 
-  const items = typeof(data.payload.items) == 'array'
+  const items = typeof(data.payload.items) == 'object' && data.payload.items instanceof Array && data.payload.items.length > 0
     ? data.payload.items
     : false;
 
-  if (id && email) {
+  if (id && email && items) {
     verifyToken(id, email, function(isTokenValid) {
       if (isTokenValid) {
         _data.read('users', email, function(err, data) {
           if (!err && data) {
-            data.cart = data.cart || [];
-            items.forEach(function(item){
+            data.cart = [];
+            items.forEach(function(item) {
               const itemData = {
-                "crust": []
+                "meat": typeof(item.meat) == 'string' && item.meat.trim().length > 0 && pizzaMenuData.selection.meats.indexOf(item.meat) > -1
+                  ? item.meat
+                  : "",
+                "sauce": typeof(item.sauce) == 'string' && item.sauce.trim().length > 0 && pizzaMenuData.selection.sauces.indexOf(item.sauce) > -1
+                  ? item.sauce
+                  : "Regular",
+                "toppings": typeof(item.toppings) == 'object' && item.toppings instanceof Array && item.toppings.length > 0
+                  ? item.toppings.filter(function(topping) {
+                    return pizzaMenuData.selection.toppings.indexOf(topping) > -1;
+                  })
+                  : []
+              };
+
+              if (typeof(item.size) == 'string' && item.size.trim().length > 0) {
+                itemData.size = pizzaMenuData.selection.sizes.filter(function(size) {
+                  return size.name === item.size.trim();
+                })[0];
               }
+              if (!itemData.size) {
+                itemData.size = pizzaMenuData.selection.sizes.filter(function(size) {
+                  return size.default;
+                })[0];
+              }
+
+              if (typeof(item.crust) == 'string' && item.crust.trim().length > 0) {
+                itemData.crust = pizzaMenuData.selection.crusts.filter(function(crust) {
+                  return crust.name === item.crust.trim();
+                })[0];
+              }
+              if (!itemData.crust) {
+                itemData.crust = pizzaMenuData.selection.crusts.filter(function(crust) {
+                  return crust.price === 0;
+                })[0];
+              }
+              itemData.toppingsPrice = itemData.toppings.length * pizzaMenuData.selection.pricePerTopping
+              itemData.itemTotal = itemData.size.price + itemData.crust.price + itemData.toppingsPrice;
+              data.cart.push(itemData);
             });
-            callback(200, data);
+            if (data.cart.length) {
+              _data.update('users', email, data, function(err) {
+                if (!err) {
+                  delete data.hashedPassword;
+                  callback(200, data);
+                } else {
+                  callback(500, {'Error': 'Could not update the user.'})
+                }
+              })
+            } else {
+              // Remove the hashed password from the user user object before returning it to the requester
+              delete data.hashedPassword;
+              callback(200, data);
+            }
           } else {
             callback(404);
           }
@@ -413,6 +469,49 @@ _cart.post = function(data, callback) {
     callback(404, {'Error': 'Missing required field'});
   }
 };
+
+// Required headers: email, id
+// Optional data: none
+_cart.get = function(data, callback) {
+  const email = typeof(data.headers.email) == 'string'
+    ? data.headers.email.trim()
+    : false;
+  const id = typeof(data.headers.token) == 'string' && data.headers.token.trim().length == 20
+    ? data.headers.token.trim()
+    : false;
+  _users.load(email, id, function(status, response) {
+    if (status == 200) {
+      // Remove the hashed password from the user user object before returning it to the requester
+      delete response.hashedPassword;
+    }
+    callback(status, response);
+  });
+}
+
+// Required headers: email, id
+// Optional data: none
+_cart.delete = function(data, callback) {
+  const email = typeof(data.headers.email) == 'string'
+    ? data.headers.email.trim()
+    : false;
+  const id = typeof(data.headers.token) == 'string' && data.headers.token.trim().length == 20
+    ? data.headers.token.trim()
+    : false;
+  _users.load(email, id, function(status, response) {
+    if (status == 200) {
+      delete response.cart;
+      _data.update('users', email, response, function(err) {
+        if (!err) {
+          callback(200);
+        } else {
+          callback(500, {'Error': 'Could not update the user.'})
+        }
+      })
+    } else {
+      callback(status, response);
+    }
+  });
+}
 
 handlers.notFound = function(data, callback) {
   callback(404);

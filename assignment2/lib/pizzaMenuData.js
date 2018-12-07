@@ -23,6 +23,7 @@ const menu = {
     }, {
       "name": "Medium",
       "price": 1000,
+      "default": true
     }, {
       "name": "Small",
       "price": 500,
