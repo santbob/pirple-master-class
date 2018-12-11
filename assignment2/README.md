@@ -12,6 +12,16 @@ This project is assignment#2 of the NodeJS Master class from pirple. The aim is 
    3. `STRIPE_API_SECRET_KEY` - the secret key for using stripe api ex. sk_test_34343493943984
 4. once the environment variable are set, run `node .`
 
+## How to Test a Order flow.
+
+Follow the steps below to create an order, api requests details are in the section below.
+
+1. Create an user using `User Create` api call
+2. Create a token using `Token Create` api call by using same email and password used to create the user.
+3. Use the token generated and email used in step 2 in the `Menu Read` call to see the list of options possible with the menu
+4. Update the user carts by using the `Cart create/update` api call by configuring the items array appropriately.
+5. Use the `Order Create` api to make payment and get the email confirmation.
+6. Check the `User Read` or `Cart Read` api to verify if the cart is cleared.
 
 ## API Requests
 
@@ -137,14 +147,3 @@ Path: "/order"
 header: {"Content-Type": "application/json","token": "koe3setjhem4dnhros7n", "email": "john.doe@example.com"}
 body: {}
 ```
-
-## How to Test a Order flow.
-
-Follow the steps to create an order.
-
-1. Create an user using `User Create` api call
-2. Create a token using `Token Create` api call by using same email and password used to create the user.
-3. Use the token generated and email used in step 2 in the `Menu Read` call to see the list of options possible with the menu
-4. Update the user carts by using the `Cart create/update` api call by configuring the items array appropriately.
-5. Use the `Order Create` api to make payment and get the email confirmation.
-6. Check the `User Read` or `Cart Read` api to verify if the cart is cleared.
