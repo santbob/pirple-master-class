@@ -521,7 +521,7 @@ _cart.delete = function(data, callback) {
 }
 
 handlers.order = function(data, callback) {
-  const acceptableMethods = ['post', 'put'];
+  const acceptableMethods = ['post', 'get'];
   if (acceptableMethods.indexOf(data.method) > -1) {
     _order[data.method](data, callback);
   } else {
@@ -619,6 +619,41 @@ _order.post = function(data, callback) {
     callback(httpStatuses.INVALID_REQUEST.code, {'error': 'Missing required field'});
   }
 };
+
+_order.get = function(data, callback) {
+  const orderId = typeof(data.queryStringObject.id) == 'string'
+    ? data.queryStringObject.id.trim()
+    : false;
+  const email = typeof(data.headers.email) == 'string' && data.headers.email.trim().length > 0
+    ? data.headers.email.trim()
+    : false;
+  const token = typeof(data.headers.token) == 'string' && data.headers.token.trim().length == 20
+    ? data.headers.token.trim()
+    : false;
+
+  if (token && email && orderId) {
+    verifyToken(token, email, function(isTokenValid) {
+      if (isTokenValid) {
+        _data.read('orders', orderId, function(err, orderData) {
+          if (!err && orderData) {
+            if (orderData.email == email) {
+              delete orderData.chargeId; // delete chargeId from the response
+              callback(httpStatuses.SUCCESS.code, orderData);
+            } else {
+              callback(httpStatuses.FORBIDDEN.code, {'error': 'Not authorized to look at this order'})
+            }
+          } else {
+            callback(httpStatuses.NOT_FOUND.code, {'error': 'Order not found'});
+          }
+        });
+      } else {
+        callback(httpStatuses.FORBIDDEN.code, {'error': 'Invalid or expired token'});
+      }
+    });
+  } else {
+    callback(httpStatuses.INVALID_REQUEST.code, {'error': 'Missing required field'});
+  }
+}
 
 handlers.notFound = function(data, callback) {
   callback(httpStatuses.NOT_FOUND.code, {'error': 'Requested api is not supported'});

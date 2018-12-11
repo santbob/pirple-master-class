@@ -121,7 +121,7 @@ body: {
 			"toppings": ["Tomatoes", "Mushrooms", "Green Bell Peppers"],
 			"sauce": "BBQ",
 			"meat": "Pepperoni"
-		}	
+		}
 	]
 }
 ```
@@ -146,4 +146,11 @@ Method: "POST"
 Path: "/order"
 header: {"Content-Type": "application/json","token": "koe3setjhem4dnhros7n", "email": "john.doe@example.com"}
 body: {}
+```
+
+**Order Read**
+```
+Method: "GET"
+Path: "/order?id=abcdefghij1234567890"
+header: {"Content-Type": "application/json", "token": "koe3setjhem4dnhros7n", "email": "john.doe@example.com"}
 ```
