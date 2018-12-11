@@ -9,7 +9,7 @@ const config = require('./config');
 const pizzaMenuData = require('./pizzaMenuData');
 const itemDetailsTpl = require('./emailTemplates/itemDetailsTpl');
 const orderConfirmationTpl = require('./emailTemplates/orderConfirmationTpl');
-
+const httpStatuses = require('./httpStatuses');
 // Define the handlers
 const handlers = {};
 
@@ -18,7 +18,7 @@ handlers.users = function(data, callback) {
   if (acceptableMethods.indexOf(data.method) > -1) {
     _users[data.method](data, callback);
   } else {
-    callback(405);
+    callback(httpStatuses.METHOD_NOT_ALLOWED.code, {'error': httpStatuses.METHOD_NOT_ALLOWED.message});
   }
 }
 
@@ -52,21 +52,21 @@ _users.post = function(data, callback) {
         if (userData.hashedPassword) {
           _data.create('users', email, userData, function(err) {
             if (!err) {
-              callback(200)
+              callback(httpStatuses.SUCCESS.code)
             } else {
               console.log(err);
-              callback(500, 'Could not create new user');
+              callback(httpStatuses.ERROR_CREATING_DOCUMENT.code, {'error': 'Could not create new user'});
             }
           })
         } else {
-          callback(500, 'Unable to Hash password try again');
+          callback(httpStatuses.SOMETHING_WRONG.code, {'error': 'Unable to Hash password try again'});
         }
       } else {
-        callback(500, 'User already exist');
+        callback(httpStatuses.USER_ALREADY_EXISTS.code, {'error': 'User already exist'});
       }
     })
   } else {
-    callback(400, {'Error': 'Missing required fields'});
+    callback(httpStatuses.INVALID_REQUEST.code, {'error': 'Missing required fields'});
   }
 }
 
@@ -80,7 +80,7 @@ _users.get = function(data, callback) {
     ? data.headers.token.trim()
     : false;
   _users.load(email, id, function(status, response) {
-    if (status == 200) {
+    if (status == httpStatuses.SUCCESS.code) {
       // Remove the hashed password from the user user object before returning it to the requester
       delete response.hashedPassword;
     }
@@ -94,17 +94,17 @@ _users.load = function(email, token, callback) {
       if (isTokenValid) {
         _data.read('users', email, function(err, data) {
           if (!err && data) {
-            callback(200, data);
+            callback(httpStatuses.SUCCESS.code, data);
           } else {
-            callback(404);
+            callback(httpStatuses.NOT_FOUND.code, {'error': 'User not found'});
           }
         });
       } else {
-        callback(403, {'Error': 'Invalid token'})
+        callback(httpStatuses.FORBIDDEN.code, {'error': 'Invalid or expired token'})
       }
     });
   } else {
-    callback(404, {'Error': 'Missing required field'});
+    callback(httpStatuses.INVALID_REQUEST.code, {'error': 'Missing required field'});
   }
 }
 
@@ -149,24 +149,24 @@ _users.put = function(data, callback) {
 
               _data.update('users', email, userData, function(err) {
                 if (!err) {
-                  callback(200);
+                  callback(httpStatuses.SUCCESS.code);
                 } else {
-                  callback(500, {'Error': 'Could not update the user.'})
+                  callback(httpStatuses.ERROR_UPDATING_DOCUMENT.code, {'error': 'Could not update the user'});
                 }
               })
             } else {
-              callback(400, {'Error': 'Specified user does not exist.'})
+              callback(httpStatuses.NOT_FOUND.code, {'error': 'User not found'});
             }
           });
         } else {
-          callback(403, {'Error': 'Invalid token'})
+          callback(httpStatuses.FORBIDDEN.code, {'error': 'Invalid or expired token'});
         }
       })
     } else {
-      callback(400, {'Error': 'Missing fields to update'});
+      callback(httpStatuses.INVALID_REQUEST.code, {'error': 'Missing fields to update'});
     }
   } else {
-    callback(404, {'Error': 'Missing required field'});
+    callback(httpStatuses.INVALID_REQUEST.code, {'error': 'Missing required field'});
   }
 }
 
@@ -187,21 +187,21 @@ _users.delete = function(data, callback) {
           if (!err && data) {
             _data.delete('users', email, function(err) {
               if (!err) {
-                callback(200);
+                callback(httpStatuses.SUCCESS.code);
               } else {
-                callback(500, {'Error': 'Could not delete the specified user'});
+                callback(httpStatuses.ERROR_UPDATING_DOCUMENT.code, {'error': 'Could not delete the specified user'});
               }
             });
           } else {
-            callback(400, {'Error': 'Could not find the specified user.'});
+            callback(httpStatuses.NOT_FOUND.code, {'error': 'User not found'});
           }
         });
       } else {
-        callback(403, {'Error': 'Invalid token'})
+        callback(httpStatuses.FORBIDDEN.code, {'error': 'Invalid or expired token'});
       }
     });
   } else {
-    callback(404, {'Error': 'Missing required field'});
+    callback(httpStatuses.INVALID_REQUEST.code, {'error': 'Missing required field'});
   }
 }
 
@@ -210,7 +210,7 @@ handlers.tokens = function(data, callback) {
   if (acceptableMethods.indexOf(data.method) > -1) {
     _tokens[data.method](data, callback);
   } else {
-    callback(405);
+    callback(httpStatuses.METHOD_NOT_ALLOWED.code, {'error': httpStatuses.METHOD_NOT_ALLOWED.message});
   }
 }
 
@@ -241,20 +241,20 @@ _tokens.post = function(data, callback) {
           }
           _data.create('tokens', tokenId, tokenObj, function(err) {
             if (!err) {
-              callback(200, tokenObj);
+              callback(httpStatuses.SUCCESS.code, tokenObj);
             } else {
-              callback(500, {'Error': 'Could not create a token'})
+              callback(httpStatuses.ERROR_CREATING_DOCUMENT.code, {'error': 'Could not create a token'});
             }
           })
         } else {
-          callback(400, {'Error': 'User email and password combination doesnt match'});
+          callback(httpStatuses.AUTH_FAILED.code, {'error': 'User email and password combination doesnt match'});
         }
       } else {
-        callback(400, {'Error': 'Could not find the specified user'});
+        callback(httpStatuses.NOT_FOUND.code, {'error': 'Could not find the specified user'});
       }
     })
   } else {
-    callback(404, {'Error': 'Missing required field'});
+    callback(httpStatuses.INVALID_REQUEST.code, {'error': 'Missing required field'});
   }
 }
 
@@ -267,13 +267,13 @@ _tokens.get = function(data, callback) {
   if (id) {
     _data.read('tokens', id, function(err, tokenData) {
       if (!err && tokenData) {
-        callback(200, tokenData);
+        callback(httpStatuses.SUCCESS.code, tokenData);
       } else {
-        callback(404);
+        callback(httpStatuses.ERROR_FINDING_DOCUMENT.code, {'error': 'couldn\'t find the token'});
       }
     })
   } else {
-    callback(404, {'Error': 'Missing required field'});
+    callback(httpStatuses.INVALID_REQUEST.code, {'error': 'Missing required field'});
   }
 }
 
@@ -293,20 +293,20 @@ _tokens.put = function(data, callback) {
 
           _data.update('tokens', id, tokenData, function(err) {
             if (!err) {
-              callback(200, tokenData);
+              callback(httpStatuses.SUCCESS.code, tokenData);
             } else {
-              callback(500, {'Error': 'Could not update the token expiration'});
+              callback(httpStatuses.ERROR_UPDATING_DOCUMENT.code, {'error': 'Could not update the token expiration'});
             }
           })
         } else {
-          callback(500, {'Error': 'Token already expired cannot extend'});
+          callback(httpStatuses.TOKEN_EXPIRED.code, {'error': 'Token already expired cannot extend'});
         }
       } else {
-        callback(404);
+        callback(httpStatuses.NOT_FOUND.code, {'error': 'Could not find the token'});
       }
     })
   } else {
-    callback(404, {'Error': 'Missing required field'});
+    callback(httpStatuses.INVALID_REQUEST.code, {'error': 'Missing required field'});
   }
 }
 
@@ -319,17 +319,17 @@ _tokens.delete = function(data, callback) {
       if (!err && data) {
         _data.delete('tokens', id, function(err) {
           if (!err) {
-            callback(200);
+            callback(httpStatuses.SUCCESS.code);
           } else {
-            callback(500, {'Error': 'Could not delete the token'});
+            callback(httpStatuses.ERROR_DELETING_DOCUMENT.code, {'error': 'Could not delete the token'});
           }
         });
       } else {
-        callback(400, {'Error': 'Could not find the token.'});
+        callback(httpStatuses.NOT_FOUND.code, {'error': 'Could not find the token'});
       }
     });
   } else {
-    callback(404, {'Error': 'Missing required field'});
+    callback(httpStatuses.INVALID_REQUEST.code, {'error': 'Missing required field'});
   }
 }
 
@@ -337,9 +337,7 @@ _tokens.delete = function(data, callback) {
 const verifyToken = function(id, email, callback) {
   _data.read('tokens', id, function(err, tokenData) {
     if (!err && tokenData) {
-      console.log('tokenData ', tokenData)
       if (tokenData.expires > Date.now() && tokenData.email == email) {
-        console.log('token valid')
         callback(true);
       } else {
         callback(false);
@@ -361,16 +359,16 @@ handlers.menu = function(data, callback) {
     if (id && email) {
       verifyToken(id, email, function(isTokenValid) {
         if (isTokenValid) {
-          callback(200, pizzaMenuData);
+          callback(httpStatuses.SUCCESS.code, pizzaMenuData);
         } else {
-          callback(403, {'Error': 'Invalid token'})
+          callback(httpStatuses.FORBIDDEN.code, {'error': 'Invalid or expired token'});
         }
       });
     } else {
-      callback(404, {'Error': 'Missing required field'});
+      callback(httpStatuses.INVALID_REQUEST.code, {'error': 'Missing required field'});
     }
   } else {
-    callback(405);
+    callback(httpStatuses.METHOD_NOT_ALLOWED.code, {'error': httpStatuses.METHOD_NOT_ALLOWED.message});
   }
 }
 
@@ -379,7 +377,7 @@ handlers.cart = function(data, callback) {
   if (acceptableMethods.indexOf(data.method) > -1) {
     _cart[data.method](data, callback);
   } else {
-    callback(405);
+    callback(httpStatuses.METHOD_NOT_ALLOWED.code, {'error': httpStatuses.METHOD_NOT_ALLOWED.message});
   }
 }
 
@@ -449,26 +447,26 @@ _cart.post = function(data, callback) {
               _data.update('users', email, data, function(err) {
                 if (!err) {
                   delete data.hashedPassword;
-                  callback(200, data);
+                  callback(httpStatuses.SUCCESS.code, data);
                 } else {
-                  callback(500, {'Error': 'Could not update the user.'})
+                  callback(httpStatuses.ERROR_UPDATING_DOCUMENT.code, {'error': 'Could not add items to the cart'});
                 }
               })
             } else {
               // Remove the hashed password from the user user object before returning it to the requester
               delete data.hashedPassword;
-              callback(200, data);
+              callback(httpStatuses.SUCCESS.code, data);
             }
           } else {
-            callback(404);
+            callback(httpStatuses.NOT_FOUND.code, {'error': 'User not found'});
           }
         });
       } else {
-        callback(403, {'Error': 'Invalid token'})
+        callback(httpStatuses.FORBIDDEN.code, {'error': 'Invalid or expired token'});
       }
     });
   } else {
-    callback(404, {'Error': 'Missing required field'});
+    callback(httpStatuses.INVALID_REQUEST.code, {'error': 'Missing required field'});
   }
 };
 
@@ -482,7 +480,7 @@ _cart.get = function(data, callback) {
     ? data.headers.token.trim()
     : false;
   _users.load(email, id, function(status, response) {
-    if (status == 200) {
+    if (status == httpStatuses.SUCCESS.code) {
       // Remove the hashed password from the user user object before returning it to the requester
       delete response.hashedPassword;
     }
@@ -500,13 +498,13 @@ _cart.delete = function(data, callback) {
     ? data.headers.token.trim()
     : false;
   _users.load(email, id, function(status, response) {
-    if (status == 200) {
+    if (status == httpStatuses.SUCCESS.code) {
       delete response.cart;
       _data.update('users', email, response, function(err) {
         if (!err) {
-          callback(200);
+          callback(httpStatuses.SUCCESS.code);
         } else {
-          callback(500, {'Error': 'Could not update the user.'})
+          callback(httpStatuses.ERROR_UPDATING_DOCUMENT.code, {'error': 'Could not clear the cart'});
         }
       })
     } else {
@@ -520,7 +518,7 @@ handlers.order = function(data, callback) {
   if (acceptableMethods.indexOf(data.method) > -1) {
     _order[data.method](data, callback);
   } else {
-    callback(405);
+    callback(httpStatuses.METHOD_NOT_ALLOWED.code, {'error': httpStatuses.METHOD_NOT_ALLOWED.message});
   }
 }
 
@@ -584,7 +582,7 @@ _order.post = function(data, callback) {
 
                       _data.update('users', userData.email, userData, function(err) {
                         delete orderObj.chargeId; //remove chargeId from the response
-                        callback(200, orderObj);
+                        callback(httpStatuses.SUCCESS.code, orderObj);
                         if (err) {
                           console.log("Failed to update the user, may be try again... or some other cron can run through orders folder and update users.");
                         }
@@ -592,31 +590,31 @@ _order.post = function(data, callback) {
 
                     } else {
                       //Note: Ideally should be starting a refund.
-                      callback(500, 'Could not create order');
+                      callback(httpStatuses.ERROR_CREATING_DOCUMENT.code, 'Could not create order');
                     }
                   });
                 } else {
-                  callback(500, 'Payment failed');
+                  callback(httpStatuses.PAYMENT_FAILED.code, httpStatuses.PAYMENT_FAILED.message);
                 }
               })
             } else {
-              callback(404, {'Error': 'Cart is empty'});
+              callback(httpStatuses.NOT_FOUND.code, {'error': 'Cart is empty'});
             }
           } else {
-            callback(404);
+            callback(httpStatuses.NOT_FOUND.code, {'error': 'User not found'});
           }
         });
       } else {
-        callback(403, {'Error': 'Invalid token'})
+        callback(httpStatuses.FORBIDDEN.code, {'error': 'Invalid or expired token'});
       }
     });
   } else {
-    callback(404, {'Error': 'Missing required field'});
+    callback(httpStatuses.INVALID_REQUEST.code, {'error': 'Missing required field'});
   }
 };
 
 handlers.notFound = function(data, callback) {
-  callback(404);
+  callback(httpStatuses.NOT_FOUND.code, {'error': 'Requested api is not supported'});
 }
 
 module.exports = handlers;
