@@ -7,6 +7,8 @@ const _data = require('./data');
 const helpers = require('./helpers');
 const config = require('./config');
 const pizzaMenuData = require('./pizzaMenuData');
+const itemDetailsTpl = require('./emailTemplates/itemDetailsTpl');
+const orderConfirmationTpl = require('./emailTemplates/orderConfirmationTpl');
 
 // Define the handlers
 var handlers = {};
@@ -512,6 +514,106 @@ _cart.delete = function(data, callback) {
     }
   });
 }
+
+handlers.order = function(data, callback) {
+  var acceptableMethods = ['post', 'put'];
+  if (acceptableMethods.indexOf(data.method) > -1) {
+    _order[data.method](data, callback);
+  } else {
+    callback(405);
+  }
+}
+
+const _order = {};
+
+// Required data: email, password, items array
+// Optional data: none
+_order.post = function(data, callback) {
+  const email = typeof(data.headers.email) == 'string' && data.headers.email.trim().length > 0
+    ? data.headers.email.trim()
+    : false;
+  const token = typeof(data.headers.token) == 'string' && data.headers.token.trim().length == 20
+    ? data.headers.token.trim()
+    : false;
+
+  if (token && email) {
+    verifyToken(token, email, function(isTokenValid) {
+      if (isTokenValid) {
+        _data.read('users', email, function(err, userData) {
+          if (!err && userData) {
+            if (userData.cart && userData.cart.length) {
+              var orderObj = {
+                id: helpers.createRandomString(20),
+                email: userData.email,
+                totalAmount: userData.cart.reduce(function(accumulator, item) {
+                  return accumulator + item.itemTotal;
+                }, 0),
+                items: userData.cart
+              };
+
+              helpers.chargeForOrder(orderObj.totalAmount, orderObj.email, function(err, chargeInfo) {
+                if (!err && chargeInfo) {
+                  console.log("payment is successful");
+                  // The user was charged successfully, so lets create the order and start making the pizza
+                  orderObj.chargeId = chargeInfo.id
+                  _data.create('orders', orderObj.id, orderObj, function(err) {
+                    if (!err) {
+                      const orderConfirmationData = {
+                        customerName: userData.name,
+                        orderTotal: orderObj.totalAmount,
+                        orderId: orderObj.id,
+                        deliveryAddress: userData.address,
+                        orderDetails: orderObj.items.reduce(function(accumulator, currentItem) {
+                          return accumulator + itemDetailsTpl.content(currentItem);
+                        }, "")
+                      };
+
+                      // We trigger the order confirmation email but dont wait for it to respond to user as the money is taken and order is confirmed.
+                      helpers.sendEmail(userData.email, "Order Confirmation!!", orderConfirmationTpl.content(orderConfirmationData), function(err) {
+                        if (!err) {
+                          console.log("Email sent")
+                        } else {
+                          console.log("OrderConfirmation email failed to go")
+                        }
+                      })
+
+                      //lets clear the cart from the user object and add the new order to the user account
+                      delete userData.cart;
+                      userData.orders = userData.orders || [];
+                      userData.orders.push(orderObj.id);
+
+                      _data.update('users', userData.email, userData, function(err) {
+                        delete orderObj.chargeId; //remove chargeId from the response
+                        callback(200, orderObj);
+                        if (err) {
+                          console.log("Failed to update the user, may be try again... or some other cron can run through orders folder and update users.");
+                        }
+                      });
+
+                    } else {
+                      //Note: Ideally should be starting a refund.
+                      callback(500, 'Could not create order');
+                    }
+                  });
+                } else {
+                  callback(500, 'Payment failed');
+                }
+              })
+            } else {
+              callback(404, {'Error': 'Cart is empty'});
+            }
+          } else {
+            callback(404);
+          }
+        });
+      } else {
+        callback(403, {'Error': 'Invalid token'})
+      }
+    });
+  } else {
+    callback(404, {'Error': 'Missing required field'});
+  }
+};
 
 handlers.notFound = function(data, callback) {
   callback(404);

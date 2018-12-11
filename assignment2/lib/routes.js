@@ -11,7 +11,8 @@ const routes = {
   'users': handlers.users,
   'tokens': handlers.tokens,
   'menu': handlers.menu,
-  'cart': handlers.cart
+  'cart': handlers.cart,
+  'order': handlers.order
 };
 
 // export the routes module
