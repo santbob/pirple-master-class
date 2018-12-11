@@ -76,10 +76,10 @@ _users.get = function(data, callback) {
   const email = typeof(data.queryStringObject.email) == 'string'
     ? data.queryStringObject.email.trim()
     : false;
-  const id = typeof(data.headers.token) == 'string' && data.headers.token.trim().length == 20
+  const token = typeof(data.headers.token) == 'string' && data.headers.token.trim().length == 20
     ? data.headers.token.trim()
     : false;
-  _users.load(email, id, function(status, response) {
+  _users.load(email, token, function(status, response) {
     if (status == httpStatuses.SUCCESS.code) {
       // Remove the hashed password from the user user object before returning it to the requester
       delete response.hashedPassword;
@@ -114,7 +114,7 @@ _users.put = function(data, callback) {
   const email = typeof(data.queryStringObject.email) == 'string'
     ? data.queryStringObject.email.trim()
     : false;
-  const id = typeof(data.headers.token) == 'string' && data.headers.token.trim().length == 20
+  const token = typeof(data.headers.token) == 'string' && data.headers.token.trim().length == 20
     ? data.headers.token.trim()
     : false;
 
@@ -129,9 +129,9 @@ _users.put = function(data, callback) {
     ? data.payload.password.trim()
     : false;
 
-  if (email && id) {
+  if (email && token) {
     if (name || email || password) {
-      verifyToken(id, email, function(isTokenValid) {
+      verifyToken(token, email, function(isTokenValid) {
         if (isTokenValid) {
           _data.read('users', email, function(err, userData) {
             if (!err && userData) {
@@ -176,11 +176,11 @@ _users.delete = function(data, callback) {
   const email = typeof(data.queryStringObject.email) == 'string'
     ? data.queryStringObject.email.trim()
     : false;
-  const id = typeof(data.headers.token) == 'string' && data.headers.token.trim().length == 20
+  const token = typeof(data.headers.token) == 'string' && data.headers.token.trim().length == 20
     ? data.headers.token.trim()
     : false;
 
-  if (email && id) {
+  if (email && token) {
     verifyToken(id, email, function(isTokenValid) {
       if (isTokenValid) {
         _data.read('users', email, function(err, data) {
@@ -219,7 +219,6 @@ const _tokens = {};
 // Required data: email, password
 // Optional data: none
 _tokens.post = function(data, callback) {
-  console.log("payload", data.payload);
   const email = typeof(data.payload.email) == 'string' && data.payload.email.trim().length > 0
     ? data.payload.email.trim()
     : false;
@@ -261,11 +260,11 @@ _tokens.post = function(data, callback) {
 // Required data: id
 // Optional data: none
 _tokens.get = function(data, callback) {
-  const id = typeof(data.queryStringObject.id) == 'string' && data.queryStringObject.id.trim().length > 0
+  const token = typeof(data.queryStringObject.id) == 'string' && data.queryStringObject.id.trim().length > 0
     ? data.queryStringObject.id.trim()
     : false;
-  if (id) {
-    _data.read('tokens', id, function(err, tokenData) {
+  if (token) {
+    _data.read('tokens', token, function(err, tokenData) {
       if (!err && tokenData) {
         callback(httpStatuses.SUCCESS.code, tokenData);
       } else {
@@ -278,20 +277,20 @@ _tokens.get = function(data, callback) {
 }
 
 _tokens.put = function(data, callback) {
-  const id = typeof(data.queryStringObject.id) == 'string' && data.queryStringObject.id.trim().length > 0
+  const token = typeof(data.queryStringObject.id) == 'string' && data.queryStringObject.id.trim().length > 0
     ? data.queryStringObject.id.trim()
     : false;
   const extend = typeof(data.payload.extend) == 'boolean' && data.payload.extend == true
     ? true
     : false;
 
-  if (id && extend) {
-    _data.read('tokens', id, function(err, tokenData) {
+  if (token && extend) {
+    _data.read('tokens', token, function(err, tokenData) {
       if (!err && tokenData) {
         if (tokenData.expires > Date.now()) {
           tokenData.expires = Date.now() + (1000 * 60 * 60);
 
-          _data.update('tokens', id, tokenData, function(err) {
+          _data.update('tokens', token, tokenData, function(err) {
             if (!err) {
               callback(httpStatuses.SUCCESS.code, tokenData);
             } else {
@@ -311,13 +310,13 @@ _tokens.put = function(data, callback) {
 }
 
 _tokens.delete = function(data, callback) {
-  const id = typeof(data.queryStringObject.id) == 'string' && data.queryStringObject.id.trim().length == 20
+  const token = typeof(data.queryStringObject.id) == 'string' && data.queryStringObject.id.trim().length == 20
     ? data.queryStringObject.id.trim()
     : false;
-  if (id) {
-    _data.read('tokens', id, function(err, data) {
+  if (token) {
+    _data.read('tokens', token, function(err, data) {
       if (!err && data) {
-        _data.delete('tokens', id, function(err) {
+        _data.delete('tokens', token, function(err) {
           if (!err) {
             callback(httpStatuses.SUCCESS.code);
           } else {
@@ -334,8 +333,8 @@ _tokens.delete = function(data, callback) {
 }
 
 // Verify given token is valid
-const verifyToken = function(id, email, callback) {
-  _data.read('tokens', id, function(err, tokenData) {
+const verifyToken = function(token, email, callback) {
+  _data.read('tokens', token, function(err, tokenData) {
     if (!err && tokenData) {
       if (tokenData.expires > Date.now() && tokenData.email == email) {
         callback(true);
@@ -349,15 +348,15 @@ const verifyToken = function(id, email, callback) {
 }
 
 handlers.menu = function(data, callback) {
-  const id = typeof(data.headers.token) == 'string' && data.headers.token.trim().length == 20
+  const token = typeof(data.headers.token) == 'string' && data.headers.token.trim().length == 20
     ? data.headers.token.trim()
     : false;
   const email = typeof(data.headers.email) == 'string'
     ? data.headers.email.trim()
     : false;
   if (data.method == 'get') {
-    if (id && email) {
-      verifyToken(id, email, function(isTokenValid) {
+    if (token && email) {
+      verifyToken(token, email, function(isTokenValid) {
         if (isTokenValid) {
           callback(httpStatuses.SUCCESS.code, pizzaMenuData);
         } else {
@@ -389,7 +388,7 @@ _cart.post = function(data, callback) {
   const email = typeof(data.headers.email) == 'string' && data.headers.email.trim().length > 0
     ? data.headers.email.trim()
     : false;
-  const id = typeof(data.headers.token) == 'string' && data.headers.token.trim().length == 20
+  const token = typeof(data.headers.token) == 'string' && data.headers.token.trim().length == 20
     ? data.headers.token.trim()
     : false;
 
@@ -397,8 +396,8 @@ _cart.post = function(data, callback) {
     ? data.payload.items
     : false;
 
-  if (id && email && items) {
-    verifyToken(id, email, function(isTokenValid) {
+  if (token && email && items) {
+    verifyToken(token, email, function(isTokenValid) {
       if (isTokenValid) {
         _data.read('users', email, function(err, data) {
           if (!err && data) {
@@ -476,16 +475,20 @@ _cart.get = function(data, callback) {
   const email = typeof(data.headers.email) == 'string'
     ? data.headers.email.trim()
     : false;
-  const id = typeof(data.headers.token) == 'string' && data.headers.token.trim().length == 20
+  const token = typeof(data.headers.token) == 'string' && data.headers.token.trim().length == 20
     ? data.headers.token.trim()
     : false;
-  _users.load(email, id, function(status, response) {
-    if (status == httpStatuses.SUCCESS.code) {
-      // Remove the hashed password from the user user object before returning it to the requester
-      delete response.hashedPassword;
-    }
-    callback(status, response);
-  });
+  if (email && token) {
+    _users.load(email, token, function(status, response) {
+      if (status == httpStatuses.SUCCESS.code) {
+        // Remove the hashed password from the user user object before returning it to the requester
+        delete response.hashedPassword;
+      }
+      callback(status, response);
+    });
+  } else {
+    callback(httpStatuses.INVALID_REQUEST.code, {'error': 'Missing required field'});
+  }
 }
 
 // Required headers: email, id
@@ -494,23 +497,27 @@ _cart.delete = function(data, callback) {
   const email = typeof(data.headers.email) == 'string'
     ? data.headers.email.trim()
     : false;
-  const id = typeof(data.headers.token) == 'string' && data.headers.token.trim().length == 20
+  const token = typeof(data.headers.token) == 'string' && data.headers.token.trim().length == 20
     ? data.headers.token.trim()
     : false;
-  _users.load(email, id, function(status, response) {
-    if (status == httpStatuses.SUCCESS.code) {
-      delete response.cart;
-      _data.update('users', email, response, function(err) {
-        if (!err) {
-          callback(httpStatuses.SUCCESS.code);
-        } else {
-          callback(httpStatuses.ERROR_UPDATING_DOCUMENT.code, {'error': 'Could not clear the cart'});
-        }
-      })
-    } else {
-      callback(status, response);
-    }
-  });
+  if (email && token) {
+    _users.load(email, token, function(status, response) {
+      if (status == httpStatuses.SUCCESS.code) {
+        delete response.cart;
+        _data.update('users', email, response, function(err) {
+          if (!err) {
+            callback(httpStatuses.SUCCESS.code);
+          } else {
+            callback(httpStatuses.ERROR_UPDATING_DOCUMENT.code, {'error': 'Could not clear the cart'});
+          }
+        })
+      } else {
+        callback(status, response);
+      }
+    });
+  } else {
+    callback(httpStatuses.INVALID_REQUEST.code, {'error': 'Missing required field'});
+  }
 }
 
 handlers.order = function(data, callback) {
