@@ -11,10 +11,10 @@ const itemDetailsTpl = require('./emailTemplates/itemDetailsTpl');
 const orderConfirmationTpl = require('./emailTemplates/orderConfirmationTpl');
 
 // Define the handlers
-var handlers = {};
+const handlers = {};
 
 handlers.users = function(data, callback) {
-  var acceptableMethods = ['post', 'get', 'put', 'delete'];
+  const acceptableMethods = ['post', 'get', 'put', 'delete'];
   if (acceptableMethods.indexOf(data.method) > -1) {
     _users[data.method](data, callback);
   } else {
@@ -43,7 +43,7 @@ _users.post = function(data, callback) {
     //Make sure that user doesnt exist already.
     _data.read('users', email, function(err, data) {
       if (err) {
-        var userData = {
+        const userData = {
           name,
           email,
           address
@@ -111,21 +111,21 @@ _users.load = function(email, token, callback) {
 // Required data: email
 // Optional data: name, lastName, password (at least one must be specified)
 _users.put = function(data, callback) {
-  var email = typeof(data.queryStringObject.email) == 'string'
+  const email = typeof(data.queryStringObject.email) == 'string'
     ? data.queryStringObject.email.trim()
     : false;
-  var id = typeof(data.headers.token) == 'string' && data.headers.token.trim().length == 20
+  const id = typeof(data.headers.token) == 'string' && data.headers.token.trim().length == 20
     ? data.headers.token.trim()
     : false;
 
   // Check for optional fields
-  var name = typeof(data.payload.name) == 'string' && data.payload.name.trim().length > 0
+  const name = typeof(data.payload.name) == 'string' && data.payload.name.trim().length > 0
     ? data.payload.name.trim()
     : false;
-  // var email = typeof(data.payload.email) == 'string' && data.payload.email.trim().length > 0
+  // const email = typeof(data.payload.email) == 'string' && data.payload.email.trim().length > 0
   //   ? data.payload.email.trim()
   //   : false;
-  var password = typeof(data.payload.password) == 'string' && data.payload.password.trim().length > 0
+  const password = typeof(data.payload.password) == 'string' && data.payload.password.trim().length > 0
     ? data.payload.password.trim()
     : false;
 
@@ -173,10 +173,10 @@ _users.put = function(data, callback) {
 // Required data: email
 // Optional data: none
 _users.delete = function(data, callback) {
-  var email = typeof(data.queryStringObject.email) == 'string'
+  const email = typeof(data.queryStringObject.email) == 'string'
     ? data.queryStringObject.email.trim()
     : false;
-  var id = typeof(data.headers.token) == 'string' && data.headers.token.trim().length == 20
+  const id = typeof(data.headers.token) == 'string' && data.headers.token.trim().length == 20
     ? data.headers.token.trim()
     : false;
 
@@ -206,7 +206,7 @@ _users.delete = function(data, callback) {
 }
 
 handlers.tokens = function(data, callback) {
-  var acceptableMethods = ['post', 'get', 'put', 'delete'];
+  const acceptableMethods = ['post', 'get', 'put', 'delete'];
   if (acceptableMethods.indexOf(data.method) > -1) {
     _tokens[data.method](data, callback);
   } else {
@@ -230,7 +230,7 @@ _tokens.post = function(data, callback) {
   if (email && password) {
     _data.read('users', email, function(err, userData) {
       if (!err && userData) {
-        var hashedPassword = helpers.hash(password);
+        const hashedPassword = helpers.hash(password);
         if (hashedPassword === userData.hashedPassword) {
           // create a new token with random name, expiry to 1 hour
           const tokenId = helpers.createRandomString(20);
@@ -261,7 +261,7 @@ _tokens.post = function(data, callback) {
 // Required data: id
 // Optional data: none
 _tokens.get = function(data, callback) {
-  var id = typeof(data.queryStringObject.id) == 'string' && data.queryStringObject.id.trim().length > 0
+  const id = typeof(data.queryStringObject.id) == 'string' && data.queryStringObject.id.trim().length > 0
     ? data.queryStringObject.id.trim()
     : false;
   if (id) {
@@ -278,10 +278,10 @@ _tokens.get = function(data, callback) {
 }
 
 _tokens.put = function(data, callback) {
-  var id = typeof(data.queryStringObject.id) == 'string' && data.queryStringObject.id.trim().length > 0
+  const id = typeof(data.queryStringObject.id) == 'string' && data.queryStringObject.id.trim().length > 0
     ? data.queryStringObject.id.trim()
     : false;
-  var extend = typeof(data.payload.extend) == 'boolean' && data.payload.extend == true
+  const extend = typeof(data.payload.extend) == 'boolean' && data.payload.extend == true
     ? true
     : false;
 
@@ -311,7 +311,7 @@ _tokens.put = function(data, callback) {
 }
 
 _tokens.delete = function(data, callback) {
-  var id = typeof(data.queryStringObject.id) == 'string' && data.queryStringObject.id.trim().length == 20
+  const id = typeof(data.queryStringObject.id) == 'string' && data.queryStringObject.id.trim().length == 20
     ? data.queryStringObject.id.trim()
     : false;
   if (id) {
@@ -351,10 +351,10 @@ const verifyToken = function(id, email, callback) {
 }
 
 handlers.menu = function(data, callback) {
-  var id = typeof(data.headers.token) == 'string' && data.headers.token.trim().length == 20
+  const id = typeof(data.headers.token) == 'string' && data.headers.token.trim().length == 20
     ? data.headers.token.trim()
     : false;
-  var email = typeof(data.headers.email) == 'string'
+  const email = typeof(data.headers.email) == 'string'
     ? data.headers.email.trim()
     : false;
   if (data.method == 'get') {
@@ -375,7 +375,7 @@ handlers.menu = function(data, callback) {
 }
 
 handlers.cart = function(data, callback) {
-  var acceptableMethods = ['post', 'get', 'delete'];
+  const acceptableMethods = ['post', 'get', 'delete'];
   if (acceptableMethods.indexOf(data.method) > -1) {
     _cart[data.method](data, callback);
   } else {
@@ -516,7 +516,7 @@ _cart.delete = function(data, callback) {
 }
 
 handlers.order = function(data, callback) {
-  var acceptableMethods = ['post', 'put'];
+  const acceptableMethods = ['post', 'put'];
   if (acceptableMethods.indexOf(data.method) > -1) {
     _order[data.method](data, callback);
   } else {
@@ -542,7 +542,7 @@ _order.post = function(data, callback) {
         _data.read('users', email, function(err, userData) {
           if (!err && userData) {
             if (userData.cart && userData.cart.length) {
-              var orderObj = {
+              const orderObj = {
                 id: helpers.createRandomString(20),
                 email: userData.email,
                 totalAmount: userData.cart.reduce(function(accumulator, item) {
