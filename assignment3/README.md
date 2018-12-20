@@ -28,7 +28,7 @@ Follow the steps below to create an order, api requests details are in the secti
 **User Create**
 ```
 Method: "POST"
-Path: "/users"
+Path: "/api/users"
 header: {"Content-Type": "application/json"}
 body: {
 	"name": "John Doe",
@@ -41,16 +41,17 @@ body: {
 **User Read**
 ```
 Method: "GET"
-Path: "/users?email=john.deo@example.com"
+Path: "/api/users?email=john.deo@example.com"
 header: {"Content-Type": "application/json", "token": "token fetched from token create call"}
 ```
 
 **User Update**
 ```
 Method: "PUT"
-Path: "/users?email=john.deo@example.com"
+Path: "/api/users"
 header: {"Content-Type": "application/json", "token": "token fetched from token create call"}
 body: {
+        "email": "john.doe@example.com",
 	"name": "John Doe",
 	"address": "1 Letterman Drive, Suite D4700, San Francisco, CA 94129"
 }
@@ -59,14 +60,14 @@ body: {
 **User Delete**
 ```
 Method: "DELETE"
-Path: "/users?email=john.deo@example.com"
+Path: "/api/users?email=john.deo@example.com"
 header: {"Content-Type": "application/json", "token": "token fetched from token create call"}
 ```
 
 **Token Create**
 ```
 Method: "POST"
-Path: "/tokens"
+Path: "/api/tokens"
 header: {"Content-Type": "application/json"}
 body: {
 	"email": "john.doe@example.com",
@@ -77,14 +78,15 @@ body: {
 **Token Read**
 ```
 Method: "GET"
-Path: "/tokens?id=koe3setjhem4dnhros7n"
+Path: "/api/tokens?id=koe3setjhem4dnhros7n"
 ```
 
 **Token Update (Extending Token)**
 ```
 Method: "PUT"
-Path: "/tokens?id=koe3setjhem4dnhros7n"
+Path: "/api/tokens"
 body: {
+        "id": "koe3setjhem4dnhros7n",
 	"extend": true
 }
 ```
@@ -92,58 +94,50 @@ body: {
 **Token Delete**
 ```
 Method: "DELETE"
-Path: "/tokens?id=koe3setjhem4dnhros7n"
+Path: "/api/tokens?id=koe3setjhem4dnhros7n"
 ```
 
 **Menu Read**
 ```
 Method: "GET"
-Path: "/menu"
+Path: "/api/menu"
 header: {"token": "koe3setjhem4dnhros7n", "email": "john.doe@example.com"}
 ```
 
 **Cart Create/Update**
 ```
 Method: "POST"
-Path: "/cart"
+Path: "/api/cart"
 header: {"Content-Type": "application/json","token": "koe3setjhem4dnhros7n", "email": "john.doe@example.com"}
 body: {
-	"items": [
-		{
-			"size": "Large",
-			"crust": "Hand Tossed",
-			"toppings": ["Jalapeno", "Olives", "Green Bell Peppers"],
-			"sauce": "Buffalo",
-			"meat": "Chicken"
-		},{
-			"size": "Medium",
-			"crust": "Hand Tossed",
-			"toppings": ["Tomatoes", "Mushrooms", "Green Bell Peppers"],
-			"sauce": "BBQ",
-			"meat": "Pepperoni"
-		}
-	]
+		
+	"size": "Large",
+	"crust": "Hand Tossed",
+	"toppings": ["Jalapeno", "Olives", "Green Bell Peppers"],
+	"sauce": "Buffalo",
+	"meat": "Chicken"
+		
 }
 ```
 
 **Cart Read**
 ```
 Method: "GET"
-Path: "/cart?email=john.deo@example.com"
+Path: "/api/cart"
 header: {"Content-Type": "application/json", "token": "koe3setjhem4dnhros7n", "email": "john.doe@example.com"}
 ```
 
 **Cart Delete**
 ```
 Method: "DELETE"
-Path: "/cart?email=john.deo@example.com"
+Path: "/api/cart"
 header: {"Content-Type": "application/json", "token": "koe3setjhem4dnhros7n", "email": "john.doe@example.com"}
 ```
 
 **Order Create**
 ```
 Method: "POST"
-Path: "/order"
+Path: "/api/order"
 header: {"Content-Type": "application/json","token": "koe3setjhem4dnhros7n", "email": "john.doe@example.com"}
 body: {}
 ```
@@ -151,6 +145,6 @@ body: {}
 **Order Read**
 ```
 Method: "GET"
-Path: "/order?id=abcdefghij1234567890"
+Path: "/api/order?id=abcdefghij1234567890"
 header: {"Content-Type": "application/json", "token": "koe3setjhem4dnhros7n", "email": "john.doe@example.com"}
 ```
