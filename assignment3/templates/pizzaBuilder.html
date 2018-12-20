@@ -1,0 +1,31 @@
+<h1>Build the Pirple Pizza</h1>
+<h2>Select the options and add to cart</h2>
+
+<div class="formWrapper">
+  <form id="pizzaBuilder" action="/api/cart" method="POST">
+    <div class="formError"></div>
+    <div class="inputWrapper">
+      <div class="inputLabel">Size</div>
+      {selections.sizeHtml}
+    </div>
+    <div class="inputWrapper">
+      <div class="inputLabel">Crust</div>
+      {selections.crustHtml}
+    </div>
+    <div class="inputWrapper">
+      <div class="inputLabel">Meat</div>
+      {selections.meatHtml}
+    </div>
+    <div class="inputWrapper">
+      <div class="inputLabel">Sauce</div>
+      {selections.sauceHtml}
+    </div>
+    <div class="inputWrapper">
+      <div class="inputLabel">Toppings</div>
+      {selections.toppingsHtml}
+    </div>
+    <div class="inputWrapper ctaWrapper">
+      <button type="submit" class="cta green">Add to Cart</button>
+    </div>
+  </form>
+</div>

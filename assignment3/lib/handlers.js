@@ -111,8 +111,8 @@ _users.load = function(email, token, callback) {
 // Required data: email
 // Optional data: name, lastName, password (at least one must be specified)
 _users.put = function(data, callback) {
-  const email = typeof(data.queryStringObject.email) == 'string'
-    ? data.queryStringObject.email.trim()
+  const email = typeof(data.payload.email) == 'string'
+    ? data.payload.email.trim()
     : false;
   const token = typeof(data.headers.token) == 'string' && data.headers.token.trim().length == 20
     ? data.headers.token.trim()
@@ -181,7 +181,7 @@ _users.delete = function(data, callback) {
     : false;
 
   if (email && token) {
-    verifyToken(id, email, function(isTokenValid) {
+    verifyToken(token, email, function(isTokenValid) {
       if (isTokenValid) {
         _data.read('users', email, function(err, data) {
           if (!err && data) {
@@ -277,8 +277,8 @@ _tokens.get = function(data, callback) {
 }
 
 _tokens.put = function(data, callback) {
-  const token = typeof(data.queryStringObject.id) == 'string' && data.queryStringObject.id.trim().length > 0
-    ? data.queryStringObject.id.trim()
+  const token = typeof(data.payload.id) == 'string' && data.payload.id.trim().length > 0
+    ? data.payload.id.trim()
     : false;
   const extend = typeof(data.payload.extend) == 'boolean' && data.payload.extend == true
     ? true
@@ -344,7 +344,7 @@ const verifyToken = function(token, email, callback) {
     } else {
       callback(false);
     }
-  })
+  });
 }
 
 handlers.menu = function(data, callback) {
@@ -382,8 +382,9 @@ handlers.cart = function(data, callback) {
 
 const _cart = {};
 
-// Required data: email, password, items array
+// Required data: email, password, payload containing cart object
 // Optional data: none
+// adds an item to the cart
 _cart.post = function(data, callback) {
   const email = typeof(data.headers.email) == 'string' && data.headers.email.trim().length > 0
     ? data.headers.email.trim()
@@ -392,56 +393,57 @@ _cart.post = function(data, callback) {
     ? data.headers.token.trim()
     : false;
 
-  const items = typeof(data.payload.items) == 'object' && data.payload.items instanceof Array && data.payload.items.length > 0
-    ? data.payload.items
+  const item = typeof(data.payload) == 'object'
+    ? data.payload
     : false;
 
-  if (token && email && items) {
+  if (token && email && item) {
     verifyToken(token, email, function(isTokenValid) {
       if (isTokenValid) {
         _data.read('users', email, function(err, data) {
           if (!err && data) {
-            data.cart = [];
-            items.forEach(function(item) {
-              const itemData = {
-                "meat": typeof(item.meat) == 'string' && item.meat.trim().length > 0 && pizzaMenuData.selection.meats.indexOf(item.meat) > -1
-                  ? item.meat
-                  : "",
-                "sauce": typeof(item.sauce) == 'string' && item.sauce.trim().length > 0 && pizzaMenuData.selection.sauces.indexOf(item.sauce) > -1
-                  ? item.sauce
-                  : "Regular",
-                "toppings": typeof(item.toppings) == 'object' && item.toppings instanceof Array && item.toppings.length > 0
-                  ? item.toppings.filter(function(topping) {
-                    return pizzaMenuData.selection.toppings.indexOf(topping) > -1;
-                  })
-                  : []
-              };
+            data.cart = data.cart || [];
 
-              if (typeof(item.size) == 'string' && item.size.trim().length > 0) {
-                itemData.size = pizzaMenuData.selection.sizes.filter(function(size) {
-                  return size.name === item.size.trim();
-                })[0];
-              }
-              if (!itemData.size) {
-                itemData.size = pizzaMenuData.selection.sizes.filter(function(size) {
-                  return size.default;
-                })[0];
-              }
+            const itemData = {
+              "meat": typeof(item.meat) == 'string' && item.meat.trim().length > 0 && pizzaMenuData.selection.meats.indexOf(item.meat) > -1
+                ? item.meat
+                : "",
+              "sauce": typeof(item.sauce) == 'string' && item.sauce.trim().length > 0 && pizzaMenuData.selection.sauces.indexOf(item.sauce) > -1
+                ? item.sauce
+                : "Regular",
+              "toppings": typeof(item.toppings) == 'object' && item.toppings instanceof Array && item.toppings.length > 0
+                ? item.toppings.filter(function(topping) {
+                  return pizzaMenuData.selection.toppings.indexOf(topping) > -1;
+                })
+                : []
+            };
 
-              if (typeof(item.crust) == 'string' && item.crust.trim().length > 0) {
-                itemData.crust = pizzaMenuData.selection.crusts.filter(function(crust) {
-                  return crust.name === item.crust.trim();
-                })[0];
-              }
-              if (!itemData.crust) {
-                itemData.crust = pizzaMenuData.selection.crusts.filter(function(crust) {
-                  return crust.price === 0;
-                })[0];
-              }
-              itemData.toppingsPrice = itemData.toppings.length * pizzaMenuData.selection.pricePerTopping
-              itemData.itemTotal = itemData.size.price + itemData.crust.price + itemData.toppingsPrice;
-              data.cart.push(itemData);
-            });
+            if (typeof(item.size) == 'string' && item.size.trim().length > 0) {
+              itemData.size = pizzaMenuData.selection.sizes.filter(function(size) {
+                return size.name === item.size.trim();
+              })[0];
+            }
+            if (!itemData.size) {
+              itemData.size = pizzaMenuData.selection.sizes.filter(function(size) {
+                return size.default;
+              })[0];
+            }
+
+            if (typeof(item.crust) == 'string' && item.crust.trim().length > 0) {
+              itemData.crust = pizzaMenuData.selection.crusts.filter(function(crust) {
+                return crust.name === item.crust.trim();
+              })[0];
+            }
+            if (!itemData.crust) {
+              itemData.crust = pizzaMenuData.selection.crusts.filter(function(crust) {
+                return crust.price === 0;
+              })[0];
+            }
+            itemData.toppingsPrice = itemData.toppings.length * pizzaMenuData.selection.pricePerTopping
+            itemData.itemTotal = itemData.size.price + itemData.crust.price + itemData.toppingsPrice;
+            itemData.id = helpers.createRandomString(12);
+            data.cart.push(itemData);
+
             if (data.cart.length) {
               _data.update('users', email, data, function(err) {
                 if (!err) {
@@ -469,8 +471,106 @@ _cart.post = function(data, callback) {
   }
 };
 
+// Required data: email, token, id & payload
+// Optional data: none
+// updates an item in the cart
+_cart.put = function(data, callback) {
+  const email = typeof(data.headers.email) == 'string' && data.headers.email.trim().length > 0
+    ? data.headers.email.trim()
+    : false;
+  const token = typeof(data.headers.token) == 'string' && data.headers.token.trim().length == 20
+    ? data.headers.token.trim()
+    : false;
+
+  const item = typeof(data.payload) == 'object'
+    ? data.payload
+    : false;
+
+  const cartItemId = typeof(data.queryStringObject.id) == 'string' && data.queryStringObject.id.trim().length == 12
+    ? data.queryStringObject.id.trim()
+    : false;
+
+  if (token && email && cartItemId && item) {
+    verifyToken(token, email, function(isTokenValid) {
+      if (isTokenValid) {
+        _data.read('users', email, function(err, data) {
+          if (!err && data) {
+            if (data.cart && data.cart.length) {
+              const cartItemIndex = data.cart.findIndex(function(cartItem) {
+                return cartItem.id = cartItemId
+              });
+
+              const cartItem = data.cart[cartItemIndex];
+
+              if (cartItem) {
+                if (typeof(item.meat) == 'string' && item.meat.trim().length > 0 && pizzaMenuData.selection.meats.indexOf(item.meat) > -1) {
+                  cartItem.meat = item.meat;
+                }
+
+                if (typeof(item.sauce) == 'string' && item.sauce.trim().length > 0 && pizzaMenuData.selection.sauces.indexOf(item.sauce) > -1) {
+                  cartItem.sauce = item.sauce;
+                }
+
+                if (typeof(item.toppings) == 'object' && item.toppings instanceof Array && item.toppings.length > 0) {
+                  cartItem.toppings = item.toppings.filter(function(topping) {
+                    return pizzaMenuData.selection.toppings.indexOf(topping) > -1;
+                  });
+                }
+
+                if (typeof(item.size) == 'string' && item.size.trim().length > 0) {
+                  const size = pizzaMenuData.selection.sizes.filter(function(size) {
+                    return size.name === item.size.trim();
+                  })[0];
+
+                  if (size) {
+                    cartItem.size = size;
+                  }
+                }
+
+                if (typeof(item.crust) == 'string' && item.crust.trim().length > 0) {
+                  const crust = pizzaMenuData.selection.crusts.filter(function(crust) {
+                    return crust.name === item.crust.trim();
+                  })[0];
+                  if (crust) {
+                    cartItem.crust = crust;
+                  }
+                }
+
+                cartItem.toppingsPrice = cartItem.toppings.length * pizzaMenuData.selection.pricePerTopping
+                cartItem.itemTotal = cartItem.size.price + cartItem.crust.price + cartItem.toppingsPrice;
+
+                data.cart[cartItemIndex] = cartItem;
+
+                _data.update('users', email, data, function(err) {
+                  if (!err) {
+                    delete data.hashedPassword;
+                    callback(httpStatuses.SUCCESS.code, data);
+                  } else {
+                    callback(httpStatuses.ERROR_UPDATING_DOCUMENT.code, {'error': 'Could not add items to the cart'});
+                  }
+                });
+              } else {
+                callback(httpStatuses.NOT_FOUND.code, {'error': 'Cart Item not found'});
+              }
+            } else {
+              callback(httpStatuses.NOT_FOUND.code, {'error': 'Cart is empty or not found'});
+            }
+          } else {
+            callback(httpStatuses.NOT_FOUND.code, {'error': 'User not found'});
+          }
+        });
+      } else {
+        callback(httpStatuses.FORBIDDEN.code, {'error': 'Invalid or expired token'});
+      }
+    });
+  } else {
+    callback(httpStatuses.INVALID_REQUEST.code, {'error': 'Missing required field'});
+  }
+};
+
 // Required headers: email, id
 // Optional data: none
+// Returns the whole cart
 _cart.get = function(data, callback) {
   const email = typeof(data.headers.email) == 'string'
     ? data.headers.email.trim()
@@ -492,7 +592,8 @@ _cart.get = function(data, callback) {
 }
 
 // Required headers: email, id
-// Optional data: none
+// Optional data: id or deleteAll either one is required, id to delete individual cart item.
+//
 _cart.delete = function(data, callback) {
   const email = typeof(data.headers.email) == 'string'
     ? data.headers.email.trim()
@@ -500,10 +601,27 @@ _cart.delete = function(data, callback) {
   const token = typeof(data.headers.token) == 'string' && data.headers.token.trim().length == 20
     ? data.headers.token.trim()
     : false;
-  if (email && token) {
+  const cartItemId = typeof(data.queryStringObject.id) == 'string' && data.queryStringObject.id.trim().length == 12
+    ? data.queryStringObject.id.trim()
+    : false;
+  const deleteAll = typeof(data.queryStringObject.deleteAll) == 'boolean'
+    ? !!data.queryStringObject.deleteAll
+    : false;
+  if (email && token && (deleteAll || cartItemId)) {
     _users.load(email, token, function(status, response) {
       if (status == httpStatuses.SUCCESS.code) {
-        delete response.cart;
+        if (deleteAll) {
+          delete response.cart;
+        } else if (cartItemId && response.cart) {
+
+          const cartItemIndex = response.cart.findIndex(function(cartItem) {
+            return cartItem.id == cartItemId
+          });
+
+          if (cartItemIndex > -1) {
+            response.cart.splice(cartItemIndex, 1);
+          }
+        }
         _data.update('users', email, response, function(err) {
           if (!err) {
             callback(httpStatuses.SUCCESS.code);

@@ -251,7 +251,7 @@ helpers.interpolate = function(str, data) {
   for (var key in data) {
     if (data.hasOwnProperty(key) && typeof(data[key] == 'string')) {
       var replace = data[key];
-      var find = '{' + key + '}';
+      var find = new RegExp('{' + key + '}', 'g') ;
       str = str.replace(find, replace);
     }
   }

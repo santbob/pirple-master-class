@@ -78,8 +78,8 @@ body.loggedIn .header ul li.loggedOut {
 
 .header .logo .companyName {
   margin-top: 10px;
-  margin-left:15px;
-  font-size:xx-large;
+  margin-left: 15px;
+  font-size: xx-large;
   float: right;
 }
 
@@ -92,7 +92,7 @@ body.loggedIn .header ul li.loggedOut {
 .footer {
   width: 100%;
   background-color: #1a1a1a;
-  padding: 50px 0;
+  padding: 10px 0;
   text-align: center;
   border-width: 1px 0 0 0;
   border-color: #fff;
@@ -102,8 +102,8 @@ body.loggedIn .header ul li.loggedOut {
 }
 
 .footer .copyright {
-  color: #fff;
-  font-size: medium;
+  color: #aaa;
+  font-size: small;
 }
 
 /* Index */
@@ -218,7 +218,12 @@ input, select, option {
   border-width: 1px;
   border-radius: 2px;
   padding: 7px 1%;
-  width: 100%;
+  width:100%;
+}
+
+.regular input {
+  width: initial;
+  vertical-align: text-top;
 }
 
 .checkboxGroup input {
@@ -283,18 +288,19 @@ td a, td a:hover, td a:active {
 }
 
 /* Page specific styles for dashboard */
-#noChecksMessage td {
-  text-align: center;
-  font-style: italic;
-  font-size: 20px;
-  padding: 20px;
+
+input.inline {
+  margin: .4rem;
 }
 
-#noChecksMessage {
-  display: none;
+.inline-box {
+  display: inline-block;
+  margin:5px;
+  padding:5px 10px;
+  background: #efefef;
+  color: #444;
+  border-radius:5px;
 }
-
-#createCheckCTA {
-  margin-top: 40px;
-  display: none;
+.inline-box label {
+  vertical-align: middle;
 }
