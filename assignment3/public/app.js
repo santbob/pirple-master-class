@@ -263,14 +263,14 @@ app.formResponseProcessor = function(formId, requestPayload, responsePayload) {
       } else {
         // If successful, set the token and redirect the user
         app.setSessionToken(newResponsePayload);
-        window.location = '/pizzabuilder';
+        window.location = '/cart';
       }
     });
   }
   // If login was successful, set the token in localstorage and redirect the user
   if (formId == 'sessionCreate') {
     app.setSessionToken(responsePayload);
-    window.location = '/pizzabuilder';
+    window.location = '/cart';
   }
 
   // If forms saved successfully and they have success messages, show them
@@ -283,6 +283,10 @@ app.formResponseProcessor = function(formId, requestPayload, responsePayload) {
   if (formId == 'accountDelete') {
     app.logUserOut(false);
     window.location = '/account/deleted';
+  }
+
+  if (formId == 'cart') {
+    app.loadCart();
   }
 
 };
@@ -420,40 +424,39 @@ app.loadAccountEditPage = function() {
 // Load the cart page specifically
 app.loadCartPage = function() {
   // Get the phone number from the current token, or log the user out if none is there
-  var email = typeof(app.config.sessionToken.email) == 'string'
-    ? app.config.sessionToken.email
-    : false;
   document.getElementById("pizzaBuilderButton").addEventListener("click", function(e) {
-
     // Stop it from redirecting anywhere
     e.preventDefault();
-    document.getElementById("pizzaBuilder").setAttribute("class", "show");
-    document.getElementById("cartItems").setAttribute("class", "hide");
-    document.getElementById("emptyCart").setAttribute("class", "hide");
+    app.loadPizzaBuilderUI();
   });
-  if (email) {
-    app.client.request(undefined, 'api/cart', 'GET', undefined, undefined, function(statusCode, response) {
-      if (statusCode == 200) {
-        const html = app.buildCartItemsHtml(response.cart);
-        if (html) {
-          document.getElementById("cartItems").innerHTML = html;
-          document.getElementById("cartItems").setAttribute("class", "show");
-          document.getElementById("emptyCart").setAttribute("class", "hide");
-          document.getElementById("pizzaBuilder").setAttribute("class", "hide");
-        } else {
-          document.getElementById("cartItems").setAttribute("class", "hide");
-          document.getElementById("emptyCart").setAttribute("class", "show");
-          document.getElementById("pizzaBuilder").setAttribute("class", "hide");
-        }
-      } else {
-        // If the request comes back as something other than 200, log the user our (on the assumption that the api is temporarily down or the users token is bad)
-        app.logUserOut();
-      }
-    });
-  } else {
-    app.logUserOut();
-  }
+  document.getElementById("cancelPizzaBuilder").addEventListener("click", function(e) {
+    // Stop it from redirecting anywhere
+    e.preventDefault();
+    app.loadCart();
+  });
+  app.loadCart();
 };
+
+app.loadCart = function() {
+  app.client.request(undefined, 'api/cart', 'GET', undefined, undefined, function(statusCode, response) {
+    if (statusCode == 200) {
+      const html = app.buildCartItemsHtml(response.cart);
+      if (html) {
+        document.getElementById("cartItems").innerHTML = html;
+        document.getElementById("cartItems").setAttribute("class", "show");
+        document.getElementById("emptyCart").setAttribute("class", "hide");
+        document.getElementById("pizzaBuilder").setAttribute("class", "hide");
+      } else {
+        document.getElementById("cartItems").setAttribute("class", "hide");
+        document.getElementById("emptyCart").setAttribute("class", "show");
+        document.getElementById("pizzaBuilder").setAttribute("class", "hide");
+      }
+    } else {
+      // If the request comes back as something other than 200, log the user our (on the assumption that the api is temporarily down or the users token is bad)
+      app.logUserOut();
+    }
+  });
+}
 
 app.buildCartItemsHtml = function(cartItems) {
   if (cartItems) {
@@ -484,6 +487,101 @@ app.buildCartItemHtml = function(cartItem) {
     </div>`
   }
   return '';
+}
+
+app.loadPizzaBuilderUI = function() {
+  app.client.request(undefined, 'api/menu', 'GET', undefined, undefined, function(statusCode, response) {
+    if (statusCode == 200) {
+      const html = app.buildPizzaBuilderHtml(response.selection);
+      if (html) {
+        document.getElementById("pizzaBuilderInputs").innerHTML = html;
+        document.getElementById("cartItems").setAttribute("class", "hide");
+        document.getElementById("emptyCart").setAttribute("class", "hide");
+        document.getElementById("pizzaBuilder").setAttribute("class", "show");
+      }
+    } else {
+      // If the request comes back as something other than 200, log the user our (on the assumption that the api is temporarily down or the users token is bad)
+      app.logUserOut();
+    }
+  });
+}
+
+app.buildPizzaBuilderHtml = function(menuSelection) {
+  if (menuSelection) {
+    let html = '';
+
+    //html for size selection
+    html += app.buildPizzaBuilderField('Size', menuSelection.sizes.map((size) => {
+      return app.buildInputHtml({
+        'name': 'size',
+        'value': size.name,
+        'checked': size.default
+          ? 'checked'
+          : '',
+        'inputType': 'radio'
+      })
+    }).join(''));
+
+    //html for crust selection
+    html += app.buildPizzaBuilderField('Crust', menuSelection.crusts.map((crust) => {
+      return app.buildInputHtml({
+        'name': 'crust',
+        'value': crust.name,
+        'checked': crust.price === 0
+          ? 'checked'
+          : '',
+        'inputType': 'radio',
+        'class': ''
+      });
+    }).join(''));
+
+    //html for meat selection
+    html += app.buildPizzaBuilderField('Meat', menuSelection.meats.map((meat) => {
+      return app.buildInputHtml({
+        'name': 'meat',
+        'value': meat,
+        'checked': meat === 'Chicken'
+          ? 'checked'
+          : '',
+        'inputType': 'radio',
+        'class': ''
+      });
+    }).join(''));
+
+    //html for sauce selection
+    html += app.buildPizzaBuilderField('Sauce', menuSelection.sauces.map((sauce) => {
+      return app.buildInputHtml({
+        'name': 'sauce',
+        'value': sauce,
+        'checked': sauce === 'Regular'
+          ? 'checked'
+          : '',
+        'inputType': 'radio',
+        'class': ''
+      });
+    }).join(''));
+
+    //html for toppings selection
+    html += app.buildPizzaBuilderField('Toppings', menuSelection.toppings.map((topping) => {
+      return app.buildInputHtml({'name': 'toppings', 'value': topping, 'checked': '', 'inputType': 'checkbox', 'class': 'multiselect'});
+    }).join(''));
+
+    return html;
+  }
+  return '';
+}
+
+app.buildPizzaBuilderField = function(fieldName, html) {
+  return `<div class="inputWrapper">
+    <div class="inputLabel">${fieldName}</div>
+    ${html}
+  </div>`;
+}
+
+app.buildInputHtml = function(data) {
+  return `<div class="inline-box regular">
+    <label for="${data.value}"><input type="${data.inputType}" id="${data.value}" name="${data.name}" value="${data.value}" ${data.checked} class="${data.class}"> ${data.value}</label>
+  </div>`;
 }
 
 app.formatMoney = function(amount, currencySymbol) {

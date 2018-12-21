@@ -166,6 +166,18 @@ body.index .blurb {
   background-color: #c83737 !important;
 }
 
+.cta.grey, .cta.grey:hover {
+  background-color: #efefef !important;
+  color: #444;
+}
+
+.cta.small, a.cta.small:hover, a.cta.small:active, a.cta.small:visited, button.cta.small:hover, button.cta.small:active, button.cta.small:visited {
+  width: 100px;
+  height: 15px;
+  padding: 10px;
+  font-size: small;
+}
+
 .warning {
   font-style: italic;
   color: #c83737;
@@ -313,6 +325,10 @@ input.inline {
   display: block;
 }
 
+.cart .formWrapper {
+  max-width: 550px;
+}
+
 .cartItem {
   padding: 10px;
   margin: 10px 0px;
@@ -325,6 +341,7 @@ input.inline {
   font-size: medium;
   padding-right: 10px;
   border-right: 1px solid #ccc;
+  width: 85%;
 }
 
 .cartItem .details .toppings {
@@ -351,11 +368,13 @@ input.inline {
   margin-left: 10px;
   float: right;
   margin-top: 5px;
+  cursor: pointer;
 }
 
 .cartTotal {
   font-weight: bold;
   color: green;
-  font-size: large;
-  text-align: right;
+  font-size: x-large;
+  text-align: center;
+  margin: 15px;
 }

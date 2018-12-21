@@ -3,7 +3,7 @@
 
 
 <div class="ctaWrapper">
-  <a class="cta" href="#" id="pizzaBuilderButton">Build Pizza</a>
+  <a class="cta small" href="#" id="pizzaBuilderButton">Build Pizza</a>
 </div>
 
 <div class="formWrapper">
@@ -15,32 +15,13 @@
     Your Cart is empty. Build your Pizza by clicking the <b>Build Pizza</b> button above.
   </div>
 
-  <div id="pizzaBuilder" class="hide">
-    <form id="pizzaBuilder" action="/api/cart" method="POST">
-      <div class="formError"></div>
-      <div class="inputWrapper">
-        <div class="inputLabel">Size</div>
-        {selections.sizeHtml}
-      </div>
-      <div class="inputWrapper">
-        <div class="inputLabel">Crust</div>
-        {selections.crustHtml}
-      </div>
-      <div class="inputWrapper">
-        <div class="inputLabel">Meat</div>
-        {selections.meatHtml}
-      </div>
-      <div class="inputWrapper">
-        <div class="inputLabel">Sauce</div>
-        {selections.sauceHtml}
-      </div>
-      <div class="inputWrapper">
-        <div class="inputLabel">Toppings</div>
-        {selections.toppingsHtml}
-      </div>
-      <div class="inputWrapper ctaWrapper">
-        <button type="submit" class="cta green">Add to Cart</button>
-      </div>
-    </form>
-  </div>
+  <form id="pizzaBuilder" action="/api/cart" method="POST" class="hide">
+    <div class="formError"></div>
+    <div id="pizzaBuilderInputs">
+    </div>
+    <div class="inputWrapper ctaWrapper">
+      <button type="submit" class="cta green">Add to Cart</button>
+      <button type="button" class="cta grey" id="cancelPizzaBuilder">Cancel</button>
+    </div>
+  </form>
 </div>
