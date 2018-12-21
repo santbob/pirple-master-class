@@ -194,8 +194,15 @@ app.bindForms = function() {
                     : [];
                   payload[nameOfElement].push(valueOfElement);
                 }
-              } else {
-                payload[nameOfElement] = valueOfElement;
+              } else if(nameOfElement){
+                //if its a radio button, store only the checked value.
+                if (elements[i].type === 'radio') {
+                  if (elementIsChecked) {
+                    payload[nameOfElement] = valueOfElement;
+                  }
+                } else {
+                  payload[nameOfElement] = valueOfElement;
+                }
               }
             }
           }
