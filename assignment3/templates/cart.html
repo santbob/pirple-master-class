@@ -1,27 +1,46 @@
 <h1>Pizza Cart</h1>
-<h2>please confirm and click Order Now</h2>
+<h2>Don't wait, Build a Pizza and Order Now</h2>
+
+
+<div class="ctaWrapper">
+  <a class="cta" href="#" id="pizzaBuilderButton">Build Pizza</a>
+</div>
 
 <div class="formWrapper">
-  <form id="accountCreate" action="/api/users" method="POST">
-    <div class="formError"></div>
-    <div class="inputWrapper">
-      <div class="inputLabel">Name</div>
-      <input type="text" name="name" placeholder="John Doe" />
-    </div>
-    <div class="inputWrapper">
-      <div class="inputLabel">Email</div>
-      <input type="text" name="email" placeholder="john.doe@example.com" />
-    </div>
-    <div class="inputWrapper">
-      <div class="inputLabel">Choose a Password</div>
-      <input type="password" name="password" placeholder="Make it a good one!" />
-    </div>
-    <div class="inputWrapper">
-      <div class="inputLabel">Address</div>
-      <input type="text" name="address" placeholder="1 Letterman Drive, Suite D4700, San Francisco, CA 94129" />
-    </div>
-    <div class="inputWrapper ctaWrapper">
-      <button type="submit" class="cta green">Order Now</button>
-    </div>
-  </form>
+  <div id="cartItems" class="formWrapper" class="hide">
+
+  </div>
+
+  <div id="emptyCart">
+    Your Cart is empty. Build your Pizza by clicking the <b>Build Pizza</b> button above.
+  </div>
+
+  <div id="pizzaBuilder" class="hide">
+    <form id="pizzaBuilder" action="/api/cart" method="POST">
+      <div class="formError"></div>
+      <div class="inputWrapper">
+        <div class="inputLabel">Size</div>
+        {selections.sizeHtml}
+      </div>
+      <div class="inputWrapper">
+        <div class="inputLabel">Crust</div>
+        {selections.crustHtml}
+      </div>
+      <div class="inputWrapper">
+        <div class="inputLabel">Meat</div>
+        {selections.meatHtml}
+      </div>
+      <div class="inputWrapper">
+        <div class="inputLabel">Sauce</div>
+        {selections.sauceHtml}
+      </div>
+      <div class="inputWrapper">
+        <div class="inputLabel">Toppings</div>
+        {selections.toppingsHtml}
+      </div>
+      <div class="inputWrapper ctaWrapper">
+        <button type="submit" class="cta green">Add to Cart</button>
+      </div>
+    </form>
+  </div>
 </div>

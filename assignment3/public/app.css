@@ -218,7 +218,7 @@ input, select, option {
   border-width: 1px;
   border-radius: 2px;
   padding: 7px 1%;
-  width:100%;
+  width: 100%;
 }
 
 .regular input {
@@ -288,19 +288,74 @@ td a, td a:hover, td a:active {
 }
 
 /* Page specific styles for dashboard */
-
 input.inline {
   margin: .4rem;
 }
 
 .inline-box {
   display: inline-block;
-  margin:5px;
-  padding:5px 10px;
+  margin: 5px;
+  padding: 5px 10px;
   background: #efefef;
   color: #444;
-  border-radius:5px;
+  border-radius: 5px;
 }
+
 .inline-box label {
   vertical-align: middle;
+}
+
+.hide {
+  display: none;
+}
+
+.show {
+  display: block;
+}
+
+.cartItem {
+  padding: 10px;
+  margin: 10px 0px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.cartItem .details {
+  display: inline-block;
+  font-size: medium;
+  padding-right: 10px;
+  border-right: 1px solid #ccc;
+}
+
+.cartItem .details .toppings {
+  font-size: small;
+}
+
+.cartItem .price {
+  color: red;
+  font-weight: bold;
+  display: inline-block;
+  margin-left: 5px;
+  vertical-align: super;
+}
+
+.cartItem .delete {
+  display: inline-block;
+  border-radius: 16px;
+  border: 2px solid #efefef;
+  width: 16px;
+  height: 16px;
+  text-align: center;
+  font-weight: bold;
+  color: red;
+  margin-left: 10px;
+  float: right;
+  margin-top: 5px;
+}
+
+.cartTotal {
+  font-weight: bold;
+  color: green;
+  font-size: large;
+  text-align: right;
 }

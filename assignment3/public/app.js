@@ -423,9 +423,29 @@ app.loadCartPage = function() {
   var email = typeof(app.config.sessionToken.email) == 'string'
     ? app.config.sessionToken.email
     : false;
+  document.getElementById("pizzaBuilderButton").addEventListener("click", function(e) {
+
+    // Stop it from redirecting anywhere
+    e.preventDefault();
+    document.getElementById("pizzaBuilder").setAttribute("class", "show");
+    document.getElementById("cartItems").setAttribute("class", "hide");
+    document.getElementById("emptyCart").setAttribute("class", "hide");
+  });
   if (email) {
-    app.client.request(undefined, 'api/cart', 'GET', undefined, undefined, function(statusCode, responsePayload) {
-      if (statusCode == 200) {} else {
+    app.client.request(undefined, 'api/cart', 'GET', undefined, undefined, function(statusCode, response) {
+      if (statusCode == 200) {
+        const html = app.buildCartItemsHtml(response.cart);
+        if (html) {
+          document.getElementById("cartItems").innerHTML = html;
+          document.getElementById("cartItems").setAttribute("class", "show");
+          document.getElementById("emptyCart").setAttribute("class", "hide");
+          document.getElementById("pizzaBuilder").setAttribute("class", "hide");
+        } else {
+          document.getElementById("cartItems").setAttribute("class", "hide");
+          document.getElementById("emptyCart").setAttribute("class", "show");
+          document.getElementById("pizzaBuilder").setAttribute("class", "hide");
+        }
+      } else {
         // If the request comes back as something other than 200, log the user our (on the assumption that the api is temporarily down or the users token is bad)
         app.logUserOut();
       }
@@ -434,6 +454,41 @@ app.loadCartPage = function() {
     app.logUserOut();
   }
 };
+
+app.buildCartItemsHtml = function(cartItems) {
+  if (cartItems) {
+    let html = '';
+    let cartTotal = 0;
+    cartItems.forEach(function(cartItem) {
+      cartTotal += cartItem.itemTotal;
+      html += app.buildCartItemHtml(cartItem);
+    });
+
+    html += '<div class="cartTotal">Cart Total : ' + app.formatMoney(cartTotal, '$') + '</div>';
+    html += '<div><form id="orderCreate" action="/api/order" method="POST"><div class="inputWrapper ctaWrapper"><button type="submit" class="cta green">Order Now!</button></div></form></div>';
+
+    return html;
+  }
+  return '';
+}
+
+app.buildCartItemHtml = function(cartItem) {
+  if (cartItem) {
+    return `<div class="cartItem">
+      <div class="details">
+        <div>${cartItem.size.name} ${cartItem.crust.name} ${cartItem.meat} pizza with ${cartItem.sauce} sauce</div>
+        <div class="toppings">Toppings - ${cartItem.toppings.toString()}</div>
+      </div>
+      <div class="price">${app.formatMoney(cartItem.itemTotal, '$')}</div>
+      <div class="delete" cartId="${cartItem.id}">x</div>
+    </div>`
+  }
+  return '';
+}
+
+app.formatMoney = function(amount, currencySymbol) {
+  return currencySymbol + (amount / 100);
+}
 
 // Loop to renew token often
 app.tokenRenewalLoop = function() {

@@ -131,7 +131,22 @@ htmlHandlers.sessionDeleted = function(data, callback) {
 };
 
 htmlHandlers.cart = function(data, callback) {
-  callback(null, null, CONTENT_TYPE_HTML);
+  if (data.method = GET) {
+    const templateData = {
+      'head.title': 'Cart',
+      'head.description': 'Don\'t wait, Build a Pizza and Order Now',
+      'body.class': 'cart'
+    };
+    helpers.buildHtmlFromTemplate('cart', templateData, function(err, str) {
+      if (!err && str) {
+        callback(httpStatuses.SUCCESS.code, str, CONTENT_TYPE_HTML);
+      } else {
+        callback(httpStatuses.ERROR_FINDING_DOCUMENT.code, undefined, CONTENT_TYPE_HTML)
+      }
+    });
+  } else {
+    callback(httpStatuses.METHOD_NOT_ALLOWED.code, undefined, CONTENT_TYPE_HTML);
+  }
 };
 
 htmlHandlers.pizzaBuilder = function(data, callback) {
