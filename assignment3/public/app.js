@@ -244,15 +244,13 @@ app.bindForms = function() {
   if (document.querySelector("form")) {
     var allForms = document.querySelectorAll("form");
     for (var i = 0; i < allForms.length; i++) {
-
-      allForms[i].removeEventListener("submit", function(e){
-        var self = this;
-        app.handleFormSubmit.call(self, e)
-      });
-      allForms[i].addEventListener("submit", function(e) {
-        var self = this;
-        app.handleFormSubmit.call(self, e);
-      });
+      if(!allForms[i].getAttribute("isFormSubmitEventHandlerSet")) {
+        allForms[i].addEventListener("submit", function(e) {
+          var self = this;
+          app.handleFormSubmit.call(self, e);
+        });
+        allForms[i].setAttribute("isFormSubmitEventHandlerSet", true)
+      }
     }
   }
 };
@@ -303,11 +301,7 @@ app.formResponseProcessor = function(formId, requestPayload, responsePayload) {
     window.location = '/account/deleted';
   }
 
-  if (formId == 'cart') {
-    app.loadCart();
-  }
-
-  if(formId.indexOf("deleteCartItem-") > -1) {
+  if (formId == 'cart' || formId == 'pizzaBuilder' || formId.indexOf("deleteCartItem-") > -1 || formId == 'orderCreate') {
     app.loadCart();
   }
 };
