@@ -667,6 +667,7 @@ _order.post = function(data, callback) {
             if (userData.cart && userData.cart.length) {
               const orderObj = {
                 id: helpers.createRandomString(20),
+                created: Date.now(),
                 email: userData.email,
                 totalAmount: userData.cart.reduce(function(accumulator, item) {
                   return accumulator + item.itemTotal;

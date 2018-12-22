@@ -244,11 +244,13 @@ app.bindForms = function() {
   if (document.querySelector("form")) {
     var allForms = document.querySelectorAll("form");
     for (var i = 0; i < allForms.length; i++) {
+      // check if the form already has a submit event handlers attached before attaching one.
       if (!allForms[i].getAttribute("isFormSubmitEventHandlerSet")) {
         allForms[i].addEventListener("submit", function(e) {
           var self = this;
           app.handleFormSubmit.call(self, e);
         });
+        //record the fact a submit event listener is already attached to avoid attaching again.
         allForms[i].setAttribute("isFormSubmitEventHandlerSet", true)
       }
     }
@@ -301,8 +303,14 @@ app.formResponseProcessor = function(formId, requestPayload, responsePayload) {
     window.location = '/account/deleted';
   }
 
-  if (formId == 'cart' || formId == 'pizzaBuilder' || formId.indexOf("deleteCartItem-") > -1 || formId == 'orderCreate') {
+  // redraw the cart page upon adding or deleting an item to or from the cart respectively
+  if (formId == 'cart' || formId == 'pizzaBuilder' || formId.indexOf("deleteCartItem-") > -1) {
     app.loadCart();
+  }
+
+  //redirect to offers page upon succesfully creating an order.
+  if (formId == 'orderCreate') {
+    window.location = '/orders'
   }
 };
 
@@ -398,9 +406,9 @@ app.loadDataOnPage = function() {
   if (primaryClass == 'accountEdit') {
     app.loadAccountEditPage();
   } else if (primaryClass == 'cart') {
-    app.loadCartPage();
+    app.loadCartPage(); // pull the data for the cart page and show it
   } else if (primaryClass == 'orders') {
-    app.loadOrdersPage();
+    app.loadOrdersPage(); // pull the data for the orders page and show it
   }
 };
 
@@ -438,14 +446,15 @@ app.loadAccountEditPage = function() {
   }
 };
 
-// Load the cart page specifically
+// Sets up the cart page event handlers and then loads the data for the cart page.
 app.loadCartPage = function() {
-  // Get the phone number from the current token, or log the user out if none is there
+  // attach even to the pizza builder button to the pizza builder view.
   document.getElementById("pizzaBuilderButton").addEventListener("click", function(e) {
     // Stop it from redirecting anywhere
     e.preventDefault();
     app.loadPizzaBuilderUI();
   });
+  // attach event to cancel button to cancel from pizza builder view.
   document.getElementById("cancelPizzaBuilder").addEventListener("click", function(e) {
     // Stop it from redirecting anywhere
     e.preventDefault();
@@ -454,10 +463,12 @@ app.loadCartPage = function() {
   app.loadCart();
 };
 
+//loads the data for the card page.
 app.loadCart = function() {
   app.client.request(undefined, 'api/cart', 'GET', undefined, undefined, function(statusCode, response) {
     if (statusCode == 200) {
       const html = app.buildCartItemsHtml(response.cart);
+      // upon successful construction of html, update the html accordingly
       if (html) {
         document.getElementById("cartItems").innerHTML = html;
         document.getElementById("cartItems").setAttribute("class", "show");
@@ -476,6 +487,7 @@ app.loadCart = function() {
   });
 }
 
+// helper function to build the cart items html but the order button.
 app.buildCartItemsHtml = function(cartItems) {
   if (cartItems) {
     let html = '';
@@ -493,6 +505,7 @@ app.buildCartItemsHtml = function(cartItems) {
   return '';
 }
 
+// helper function to build the individual cart item with option to delete the item.
 app.buildCartItemHtml = function(cartItem) {
   if (cartItem) {
     return `<div class="cartItem">
@@ -507,6 +520,7 @@ app.buildCartItemHtml = function(cartItem) {
   return '';
 }
 
+// helper function to setup and show the pizza builder ui
 app.loadPizzaBuilderUI = function() {
   app.client.request(undefined, 'api/menu', 'GET', undefined, undefined, function(statusCode, response) {
     if (statusCode == 200) {
@@ -524,6 +538,7 @@ app.loadPizzaBuilderUI = function() {
   });
 }
 
+// helper function to build the pizza builder ui which has the selection options to configure a pizza and add it to cart
 app.buildPizzaBuilderHtml = function(menuSelection) {
   if (menuSelection) {
     let html = '';
@@ -589,6 +604,7 @@ app.buildPizzaBuilderHtml = function(menuSelection) {
   return '';
 }
 
+// helper function for each field of pizza builder ui
 app.buildPizzaBuilderField = function(fieldName, html) {
   return `<div class="inputWrapper">
     <div class="inputLabel">${fieldName}</div>
@@ -596,12 +612,14 @@ app.buildPizzaBuilderField = function(fieldName, html) {
   </div>`;
 }
 
+// helper function for inputs used in the pizza builder
 app.buildInputHtml = function(data) {
   return `<div class="inline-box regular">
     <label for="${data.value}"><input type="${data.inputType}" id="${data.value}" name="${data.name}" value="${data.value}" ${data.checked} class="${data.class}"> ${data.value}</label>
   </div>`;
 }
 
+// helper function to print the money in dollars from cents
 app.formatMoney = function(amount, currencySymbol) {
   return currencySymbol + (amount / 100);
 }
@@ -619,18 +637,22 @@ app.loadOrdersPage = function() {
     app.client.request(undefined, 'api/users', 'GET', queryStringObject, undefined, function(statusCode, response) {
       if (statusCode == 200) {
         if (response && response.orders && response.orders.length) {
-          app.parallelCalls(response.orders.map(function(orderId){
-            return function(callback){
-              app.client.request(undefined, 'api/order', 'GET', { 'id': orderId}, undefined, function(statusCode, orderDetails) {
-                if(statusCode == 200) {
+          response.orders.reverse(); // reversing the array as recently in the last element in the array
+          //loads all the orders of this users parallely.
+          app.parallelCalls(response.orders.map(function(orderId) {
+            return function(callback) {
+              app.client.request(undefined, 'api/order', 'GET', {
+                'id': orderId
+              }, undefined, function(statusCode, orderDetails) {
+                if (statusCode == 200) {
                   callback(false, orderDetails);
                 } else {
                   callback(Error(statusCode));
                 }
               });
             }
-          }), function(err, orders){
-            if(err){
+          }), function(err, orders) {
+            if (err) {
               document.querySelector(".orders .formError").innerHTML = "Error loading orders, Please try again by refreshing the page."
             } else {
               if (document.querySelector(".orders .formError")) {
@@ -638,7 +660,7 @@ app.loadOrdersPage = function() {
               }
 
               const html = app.buildOrdersHtml(orders);
-              if(html) {
+              if (html) {
                 if (document.querySelector(".orders #noOrders")) {
                   document.querySelector(".orders #noOrders").style.display = 'none';
                 }
@@ -648,9 +670,7 @@ app.loadOrdersPage = function() {
               }
             }
           })
-        } else {
-
-        }
+        } else {}
       } else {
         // If the request comes back as something other than 200, log the user our (on the assumption that the api is temporarily down or the users token is bad)
         app.logUserOut();
@@ -661,15 +681,19 @@ app.loadOrdersPage = function() {
   }
 };
 
+// helper function to build orders html
 app.buildOrdersHtml = function(orders) {
   if (orders) {
     let html = '';
-    orders.forEach(function(order){
+    orders.forEach(function(order) {
       let orderHtml = '';
-      if(order && order.items){
+      if (order && order.items) {
         orderHtml += '<div class="orderItem">';
-        orderHtml +=`<div>Order Id: <span class="orderId">${order.id}</span></div>`
-        order.items.forEach(function(cartItem){
+        orderHtml += `<div class="lineItem">Order Id: <span class="dimmed">${order.id}</span></div>`;
+        if(order.created){
+          orderHtml += `<div class="lineItem">Date &amp; Time : <span class="dimmed">${(new Date(order.created)).toLocaleString()}</span></div>`;
+        }
+        order.items.forEach(function(cartItem) {
           orderHtml += `<div class="cartItem">
               <div class="details">
                 <div>${cartItem.size.name} ${cartItem.crust.name} ${cartItem.meat} pizza with ${cartItem.sauce} sauce</div>

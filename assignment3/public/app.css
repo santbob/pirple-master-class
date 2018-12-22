@@ -401,8 +401,10 @@ input.inline {
   border: 1px solid #ccc;
   border-radius: 5px;
 }
-
-.orders .orderId {
+.orders .lineItem {
+  margin-bottom:10px;
+}
+.orders .dimmed {
   font-size: small;
   color: #ccc;
 }
