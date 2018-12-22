@@ -153,7 +153,7 @@ htmlHandlers.orders = function(data, callback) {
   if (data.method = GET) {
     const templateData = {
       'head.title': 'Orders',
-      'head.description': 'All your orders are listed here',
+      'head.description': 'One place for all your orders',
       'body.class': 'orders'
     };
     helpers.buildHtmlFromTemplate('orders', templateData, function(err, str) {

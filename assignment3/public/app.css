@@ -236,6 +236,7 @@ input, select, option {
 .regular input {
   width: initial;
   vertical-align: text-top;
+  cursor: pointer;
 }
 
 .checkboxGroup input {
@@ -311,10 +312,12 @@ input.inline {
   background: #efefef;
   color: #444;
   border-radius: 5px;
+  cursor: pointer;
 }
 
 .inline-box label {
   vertical-align: middle;
+  cursor: pointer;
 }
 
 .hide {
@@ -381,4 +384,36 @@ input.inline {
   font-size: x-large;
   text-align: center;
   margin: 15px;
+}
+
+.orders #noOrders {
+  text-align: center;
+  font-size: medium;
+}
+
+.orders .cartItem {
+  border: 0px;
+}
+
+.orders .orderItem {
+  padding: 10px;
+  margin: 10px 0px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.orders .orderId {
+  font-size: small;
+  color: #ccc;
+}
+
+.orders .orderTotal {
+  text-align: right;
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+.orders .orderTotal .amount {
+  color: red;
+  font-weight: bold;
 }

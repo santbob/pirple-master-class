@@ -244,7 +244,7 @@ app.bindForms = function() {
   if (document.querySelector("form")) {
     var allForms = document.querySelectorAll("form");
     for (var i = 0; i < allForms.length; i++) {
-      if(!allForms[i].getAttribute("isFormSubmitEventHandlerSet")) {
+      if (!allForms[i].getAttribute("isFormSubmitEventHandlerSet")) {
         allForms[i].addEventListener("submit", function(e) {
           var self = this;
           app.handleFormSubmit.call(self, e);
@@ -399,6 +399,8 @@ app.loadDataOnPage = function() {
     app.loadAccountEditPage();
   } else if (primaryClass == 'cart') {
     app.loadCartPage();
+  } else if (primaryClass == 'orders') {
+    app.loadOrdersPage();
   }
 };
 
@@ -602,6 +604,118 @@ app.buildInputHtml = function(data) {
 
 app.formatMoney = function(amount, currencySymbol) {
   return currencySymbol + (amount / 100);
+}
+
+// Load the orders page
+app.loadOrdersPage = function() {
+  var email = typeof(app.config.sessionToken.email) == 'string'
+    ? app.config.sessionToken.email
+    : false;
+  if (email) {
+    // Fetch the user data
+    var queryStringObject = {
+      'email': email
+    };
+    app.client.request(undefined, 'api/users', 'GET', queryStringObject, undefined, function(statusCode, response) {
+      if (statusCode == 200) {
+        if (response && response.orders && response.orders.length) {
+          app.parallelCalls(response.orders.map(function(orderId){
+            return function(callback){
+              app.client.request(undefined, 'api/order', 'GET', { 'id': orderId}, undefined, function(statusCode, orderDetails) {
+                if(statusCode == 200) {
+                  callback(false, orderDetails);
+                } else {
+                  callback(Error(statusCode));
+                }
+              });
+            }
+          }), function(err, orders){
+            if(err){
+              document.querySelector(".orders .formError").innerHTML = "Error loading orders, Please try again by refreshing the page."
+            } else {
+              if (document.querySelector(".orders .formError")) {
+                document.querySelector(".orders .formError").style.display = 'none';
+              }
+
+              const html = app.buildOrdersHtml(orders);
+              if(html) {
+                if (document.querySelector(".orders #noOrders")) {
+                  document.querySelector(".orders #noOrders").style.display = 'none';
+                }
+                document.getElementById("ordersList").innerHTML = html;
+              } else {
+                document.getElementById("ordersList").style.display = 'none';
+              }
+            }
+          })
+        } else {
+
+        }
+      } else {
+        // If the request comes back as something other than 200, log the user our (on the assumption that the api is temporarily down or the users token is bad)
+        app.logUserOut();
+      }
+    });
+  } else {
+    app.logUserOut();
+  }
+};
+
+app.buildOrdersHtml = function(orders) {
+  if (orders) {
+    let html = '';
+    orders.forEach(function(order){
+      let orderHtml = '';
+      if(order && order.items){
+        orderHtml += '<div class="orderItem">';
+        orderHtml +=`<div>Order Id: <span class="orderId">${order.id}</span></div>`
+        order.items.forEach(function(cartItem){
+          orderHtml += `<div class="cartItem">
+              <div class="details">
+                <div>${cartItem.size.name} ${cartItem.crust.name} ${cartItem.meat} pizza with ${cartItem.sauce} sauce</div>
+                <div class="toppings">Toppings - ${cartItem.toppings.toString()}</div>
+              </div>
+              <div class="price">${app.formatMoney(cartItem.itemTotal, '$')}</div>
+            </div>`;
+        });
+        orderHtml += `<div class="orderTotal">Order Total: <span class="amount">${app.formatMoney(order.totalAmount, '$')}</span></div>`;
+        orderHtml += '</div>';
+        html += orderHtml;
+      }
+    });
+    return html;
+  }
+  return '';
+}
+
+// utility to call multiple functions parallely
+app.parallelCalls = function(fns, callback) {
+  const totalFns = fns.length;
+  let results = [];
+  let returnedResult = false;
+  let resultCount = 0;
+
+  const eachFnCallback = function(index) {
+    return function(err, response) {
+      if (!returnedResult) {
+        if (err) {
+          returnedResult = true;
+          callback(err);
+        } else {
+          resultCount++;
+          results[index] = response;
+          if (resultCount === totalFns) {
+            returnedResult = true;
+            callback(null, results);
+          }
+        }
+      }
+    };
+  }
+
+  fns.forEach(function(fn, index) {
+    fn(eachFnCallback(index))
+  });
 }
 
 // Loop to renew token often
