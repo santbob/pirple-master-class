@@ -20,7 +20,6 @@ const routes = {
   'session/create': htmlHandlers.sessionCreate,
   'session/deleted': htmlHandlers.sessionDeleted,
   'cart': htmlHandlers.cart,
-  'pizzabuilder': htmlHandlers.pizzaBuilder,
   'orders': htmlHandlers.orders,
   'favicon': htmlHandlers.favicon,
   'public': htmlHandlers.public

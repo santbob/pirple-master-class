@@ -371,6 +371,10 @@ input.inline {
   cursor: pointer;
 }
 
+.cartItem .delete button {
+  cursor: pointer;
+}
+
 .cartTotal {
   font-weight: bold;
   color: green;

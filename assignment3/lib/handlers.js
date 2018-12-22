@@ -601,11 +601,11 @@ _cart.delete = function(data, callback) {
   const token = typeof(data.headers.token) == 'string' && data.headers.token.trim().length == 20
     ? data.headers.token.trim()
     : false;
-  const cartItemId = typeof(data.queryStringObject.id) == 'string' && data.queryStringObject.id.trim().length == 12
-    ? data.queryStringObject.id.trim()
+  const cartItemId = typeof(data.payload.id) == 'string' && data.payload.id.trim().length == 12
+    ? data.payload.id.trim()
     : false;
-  const deleteAll = typeof(data.queryStringObject.deleteAll) == 'boolean'
-    ? !!data.queryStringObject.deleteAll
+  const deleteAll = typeof(data.payload.deleteAll) == 'boolean'
+    ? !!data.payload.deleteAll
     : false;
   if (email && token && (deleteAll || cartItemId)) {
     _users.load(email, token, function(status, response) {

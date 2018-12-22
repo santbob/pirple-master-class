@@ -136,111 +136,122 @@ app.logUserOut = function(redirectUser) {
   });
 };
 
+app.handleFormSubmit = function(e) {
+
+  // Stop it from submitting
+  e.preventDefault();
+  var formId = this.getAttribute('id');
+  var path = this.getAttribute('action');
+  var method = this.getAttribute('method').toUpperCase();
+
+  // Hide the error message (if it's currently shown due to a previous error)
+  if (document.querySelector("#" + formId + " .formError")) {
+    document.querySelector("#" + formId + " .formError").style.display = 'none';
+  }
+
+  // Hide the success message (if it's currently shown due to a previous error)
+  if (document.querySelector("#" + formId + " .formSuccess")) {
+    document.querySelector("#" + formId + " .formSuccess").style.display = 'none';
+  }
+
+  // Turn the inputs into a payload
+  var payload = {};
+  var elements = this.elements;
+  for (var i = 0; i < elements.length; i++) {
+    if (elements[i].type !== 'submit') {
+      // Determine class of element and set value accordingly
+      var classOfElement = typeof(elements[i].classList.value) == 'string' && elements[i].classList.value.length > 0
+        ? elements[i].classList.value
+        : '';
+      var valueOfElement = elements[i].type == 'checkbox' && classOfElement.indexOf('multiselect') == -1
+        ? elements[i].checked
+        : classOfElement.indexOf('intval') == -1
+          ? elements[i].value
+          : parseInt(elements[i].value);
+      var elementIsChecked = elements[i].checked;
+      // Override the method of the form if the input's name is _method
+      var nameOfElement = elements[i].name;
+      if (nameOfElement == '_method') {
+        method = valueOfElement;
+      } else {
+        // Create an payload field named "method" if the elements name is actually httpmethod
+        if (nameOfElement == 'httpmethod') {
+          nameOfElement = 'method';
+        }
+        // Create an payload field named "id" if the elements name is actually uid
+        if (nameOfElement == 'uid') {
+          nameOfElement = 'id';
+        }
+        // If the element has the class "multiselect" add its value(s) as array elements
+        if (classOfElement.indexOf('multiselect') > -1) {
+          if (elementIsChecked) {
+            payload[nameOfElement] = typeof(payload[nameOfElement]) == 'object' && payload[nameOfElement] instanceof Array
+              ? payload[nameOfElement]
+              : [];
+            payload[nameOfElement].push(valueOfElement);
+          }
+        } else if (nameOfElement) {
+          //if its a radio button, store only the checked value.
+          if (elements[i].type === 'radio') {
+            if (elementIsChecked) {
+              payload[nameOfElement] = valueOfElement;
+            }
+          } else {
+            payload[nameOfElement] = valueOfElement;
+          }
+        }
+      }
+    }
+  }
+
+  // If the method is DELETE, the payload should be a queryStringObject instead
+  var queryStringObject = method == 'DELETE'
+    ? payload
+    : {};
+
+  // Call the API
+  app.client.request(undefined, path, method, queryStringObject, payload, function(statusCode, responsePayload) {
+    // Display an error on the form if needed
+    if (statusCode !== 200) {
+
+      if (statusCode == 403) {
+        // log the user out
+        app.logUserOut();
+
+      } else {
+
+        // Try to get the error from the api, or set a default error message
+        var error = typeof(responsePayload.Error) == 'string'
+          ? responsePayload.Error
+          : 'An error has occured, please try again';
+
+        // Set the formError field with the error text
+        document.querySelector("#" + formId + " .formError").innerHTML = error;
+
+        // Show (unhide) the form error field on the form
+        document.querySelector("#" + formId + " .formError").style.display = 'block';
+      }
+    } else {
+      // If successful, send to form response processor
+      app.formResponseProcessor(formId, payload, responsePayload);
+    }
+
+  });
+};
+
 // Bind the forms
 app.bindForms = function() {
   if (document.querySelector("form")) {
-
     var allForms = document.querySelectorAll("form");
     for (var i = 0; i < allForms.length; i++) {
+
+      allForms[i].removeEventListener("submit", function(e){
+        var self = this;
+        app.handleFormSubmit.call(self, e)
+      });
       allForms[i].addEventListener("submit", function(e) {
-
-        // Stop it from submitting
-        e.preventDefault();
-        var formId = this.id;
-        var path = this.action;
-        var method = this.method.toUpperCase();
-
-        // Hide the error message (if it's currently shown due to a previous error)
-        document.querySelector("#" + formId + " .formError").style.display = 'none';
-
-        // Hide the success message (if it's currently shown due to a previous error)
-        if (document.querySelector("#" + formId + " .formSuccess")) {
-          document.querySelector("#" + formId + " .formSuccess").style.display = 'none';
-        }
-
-        // Turn the inputs into a payload
-        var payload = {};
-        var elements = this.elements;
-        for (var i = 0; i < elements.length; i++) {
-          if (elements[i].type !== 'submit') {
-            // Determine class of element and set value accordingly
-            var classOfElement = typeof(elements[i].classList.value) == 'string' && elements[i].classList.value.length > 0
-              ? elements[i].classList.value
-              : '';
-            var valueOfElement = elements[i].type == 'checkbox' && classOfElement.indexOf('multiselect') == -1
-              ? elements[i].checked
-              : classOfElement.indexOf('intval') == -1
-                ? elements[i].value
-                : parseInt(elements[i].value);
-            var elementIsChecked = elements[i].checked;
-            // Override the method of the form if the input's name is _method
-            var nameOfElement = elements[i].name;
-            if (nameOfElement == '_method') {
-              method = valueOfElement;
-            } else {
-              // Create an payload field named "method" if the elements name is actually httpmethod
-              if (nameOfElement == 'httpmethod') {
-                nameOfElement = 'method';
-              }
-              // Create an payload field named "id" if the elements name is actually uid
-              if (nameOfElement == 'uid') {
-                nameOfElement = 'id';
-              }
-              // If the element has the class "multiselect" add its value(s) as array elements
-              if (classOfElement.indexOf('multiselect') > -1) {
-                if (elementIsChecked) {
-                  payload[nameOfElement] = typeof(payload[nameOfElement]) == 'object' && payload[nameOfElement] instanceof Array
-                    ? payload[nameOfElement]
-                    : [];
-                  payload[nameOfElement].push(valueOfElement);
-                }
-              } else if(nameOfElement){
-                //if its a radio button, store only the checked value.
-                if (elements[i].type === 'radio') {
-                  if (elementIsChecked) {
-                    payload[nameOfElement] = valueOfElement;
-                  }
-                } else {
-                  payload[nameOfElement] = valueOfElement;
-                }
-              }
-            }
-          }
-        }
-
-        // If the method is DELETE, the payload should be a queryStringObject instead
-        var queryStringObject = method == 'DELETE'
-          ? payload
-          : {};
-
-        // Call the API
-        app.client.request(undefined, path, method, queryStringObject, payload, function(statusCode, responsePayload) {
-          // Display an error on the form if needed
-          if (statusCode !== 200) {
-
-            if (statusCode == 403) {
-              // log the user out
-              app.logUserOut();
-
-            } else {
-
-              // Try to get the error from the api, or set a default error message
-              var error = typeof(responsePayload.Error) == 'string'
-                ? responsePayload.Error
-                : 'An error has occured, please try again';
-
-              // Set the formError field with the error text
-              document.querySelector("#" + formId + " .formError").innerHTML = error;
-
-              // Show (unhide) the form error field on the form
-              document.querySelector("#" + formId + " .formError").style.display = 'block';
-            }
-          } else {
-            // If successful, send to form response processor
-            app.formResponseProcessor(formId, payload, responsePayload);
-          }
-
-        });
+        var self = this;
+        app.handleFormSubmit.call(self, e);
       });
     }
   }
@@ -296,6 +307,9 @@ app.formResponseProcessor = function(formId, requestPayload, responsePayload) {
     app.loadCart();
   }
 
+  if(formId.indexOf("deleteCartItem-") > -1) {
+    app.loadCart();
+  }
 };
 
 // Get the session token from localstorage and set it in the app.config object
@@ -453,6 +467,7 @@ app.loadCart = function() {
         document.getElementById("cartItems").setAttribute("class", "show");
         document.getElementById("emptyCart").setAttribute("class", "hide");
         document.getElementById("pizzaBuilder").setAttribute("class", "hide");
+        app.bindForms();
       } else {
         document.getElementById("cartItems").setAttribute("class", "hide");
         document.getElementById("emptyCart").setAttribute("class", "show");
@@ -490,7 +505,7 @@ app.buildCartItemHtml = function(cartItem) {
         <div class="toppings">Toppings - ${cartItem.toppings.toString()}</div>
       </div>
       <div class="price">${app.formatMoney(cartItem.itemTotal, '$')}</div>
-      <div class="delete" cartId="${cartItem.id}">x</div>
+      <form id="deleteCartItem-${cartItem.id}" action="/api/cart" method="DELETE" class="delete"><input type="hidden" name="id" value="${cartItem.id}"/><button type="submit">x</button></form>
     </div>`
   }
   return '';
