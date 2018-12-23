@@ -120,5 +120,15 @@ lib.list = function(dir, callback) {
   })
 }
 
+lib.fileStat = function(dir, file, callback) {
+  fs.stat(filePath(dir, file), function(err, stat) {
+    if (!err && stat) {
+      callback(false, stat);
+    } else {
+      callback('Error deleting the file')
+    }
+  })
+}
+
 // Export the module
 module.exports = lib;

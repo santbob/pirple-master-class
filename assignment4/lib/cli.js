@@ -10,7 +10,8 @@ const events = require('events');
 class _events extends events {};
 const e = new _events();
 const pizzaMenuData = require('./pizzaMenuData');
-const helpers = require('./helpers')
+const helpers = require('./helpers');
+const _data = require('./data');
 
 //instantiate the cli object to be exported
 const cli = {};
@@ -78,8 +79,8 @@ responders.help = function(str) {
   verticalSpace(2);
 
   // Show each command, followed by its explanation, in white and yellow respectively
-  commandsConfiguration.forEach(function(command){
-    var line = '      \x1b[33m ' + command.name + " "+ command.params + '      \x1b[0m';
+  commandsConfiguration.forEach(function(command) {
+    var line = '      \x1b[33m ' + command.name + " " + command.params + '      \x1b[0m';
     var padding = 60 - line.length;
     for (i = 0; i < padding; i++) {
       line += ' ';
@@ -119,16 +120,93 @@ responders.menu = function(str) {
 }
 
 // list the orders created in the last N hrs, default is 24hrs
-responders.orders = function(str) {}
+responders.orders = function(str) {
+  verticalSpace();
+  const arr = str.split('--');
+  const hrs = typeof(arr[1]) == 'string' && !isNaN(parseInt(arr[1], 10))
+    ? parseInt(arr[1], 10)
+    : 24;
+
+  const startTime = Date.now() - (hrs * 3600000);
+  console.log(`Orders from last ${hrs} hours`);
+  verticalSpace();
+  _data.list('orders', function(err, fileNames) {
+    if (!err && fileNames) {
+      fileNames.forEach(function(fileName) {
+        _data.fileStat('orders', fileName, function(err, stat) {
+          if (stat && stat.birthtimeMs && stat.birthtimeMs > startTime) {
+            console.log(fileName);
+          }
+        })
+      });
+    }
+  });
+}
 
 // returns the full info of the offer
-responders.orderInfo = function(str) {}
+responders.orderInfo = function(str) {
+  var arr = str.split('--');
+  var orderId = typeof(arr[1]) == 'string' && arr[1].trim().length > 0
+    ? arr[1].trim()
+    : false;
+  if (orderId) {
+    // Lookup the user
+    _data.read('orders', orderId, function(err, orderData) {
+      if (!err && orderData) {
+        // Print their JSON object with text highlighting
+        verticalSpace();
+        console.dir(orderData, {'colors': true});
+        verticalSpace();
+      }
+    });
+  }
+}
 
 // list the new users signed up in the last N hrs, default is 24hrs
-responders.newUsers = function(str) {}
+responders.newUsers = function(str) {
+  verticalSpace();
+  const arr = str.split('--');
+  const hrs = typeof(arr[1]) == 'string' && !isNaN(parseInt(arr[1], 10))
+    ? parseInt(arr[1], 10)
+    : 24;
+
+  const startTime = Date.now() - (hrs * 3600000);
+  console.log(`New Users from last ${hrs} hours`);
+  verticalSpace();
+  _data.list('users', function(err, userFileNames) {
+    if (!err && userFileNames) {
+      userFileNames.forEach(function(fileName) {
+        _data.fileStat('users', fileName, function(err, stat) {
+          if (stat && stat.birthtimeMs && stat.birthtimeMs > startTime) {
+            console.log(fileName);
+          }
+        })
+      });
+    }
+  });
+}
 
 // returns the full info of the given user
-responders.userInfo = function(str) {}
+responders.userInfo = function(str) {
+  var arr = str.split('--');
+  var email = typeof(arr[1]) == 'string' && arr[1].trim().length > 0
+    ? arr[1].trim()
+    : false;
+  if (email) {
+    // Lookup the user
+    _data.read('users', email, function(err, userData) {
+      if (!err && userData) {
+        // Remove the hashed password
+        delete userData.hashedPassword;
+
+        // Print their JSON object with text highlighting
+        verticalSpace();
+        console.dir(userData, {'colors': true});
+        verticalSpace();
+      }
+    });
+  }
+}
 
 // commands supports by the cli
 const commandsConfiguration = [
@@ -137,47 +215,47 @@ const commandsConfiguration = [
     params: '',
     description: 'Kill the CLI (and the rest of the application)',
     responder: responders.exit
-  },{
+  }, {
     name: 'man',
     params: '',
     description: 'Show this help page',
     responder: responders.help
-  },{
+  }, {
     name: 'help',
     params: '',
     description: 'Alias for man page, Show this help page',
     responder: responders.help
-  },{
+  }, {
     name: 'menu',
     params: '',
     description: 'Shows the menu options',
     responder: responders.menu
-  },{
+  }, {
     name: 'orders',
     params: '--{hrs}',
     description: 'Shows the orders in the last N hrs, if not provided default is 24hrs',
     responder: responders.orders
-  },{
+  }, {
     name: 'order info',
     params: '--{orderId}',
     description: 'Show details of a specified offer',
     responder: responders.orderInfo
-  },{
+  }, {
     name: 'list new users',
     params: '--{hrs}',
     description: 'Shows the users signed up in the last N hrs, if not provided default is 24hrs',
     responder: responders.newUsers
-  },{
+  }, {
     name: 'user info',
     params: '--{email}',
     description: 'Show details of a specified offer',
     responder: responders.userInfo
-  },
+  }
 ];
 
 // attach event handlers
 const supportedCommands = [];
-commandsConfiguration.forEach(function(command){
+commandsConfiguration.forEach(function(command) {
   supportedCommands.push(command.name);
   e.on(command.name, command.responder);
 });
@@ -213,7 +291,7 @@ cli.init = function() {
   // Send to console, in dark blue
   console.log('\x1b[36m%s\x1b[0m', 'The CLI is running');
 
-  const _interface = readline.createInterface({input: process.stdin, output: process.stdout, prompt: '#PirplePizza > '});
+  const _interface = readline.createInterface({input: process.stdin, output: process.stdout, prompt: ''});
 
   // Create an initial prompt
   _interface.prompt();
