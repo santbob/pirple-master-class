@@ -1,0 +1,24 @@
+<h1>Pizza Cart</h1>
+<h2>Don't wait, Build a Pizza and Order Now</h2>
+
+
+<div class="ctaWrapper">
+  <a class="cta small" href="#" id="pizzaBuilderButton">Build Pizza</a>
+</div>
+
+<div class="formWrapper">
+  <div id="emptyCart">
+    Your Cart is empty. Build your Pizza by clicking the <b>Build Pizza</b> button above.
+  </div>
+  <div id="cartItems" class="formWrapper" class="hide">
+  </div>
+  <form id="pizzaBuilder" action="/api/cart" method="POST" class="hide">
+    <div class="formError"></div>
+    <div id="pizzaBuilderInputs">
+    </div>
+    <div class="inputWrapper ctaWrapper">
+      <button type="submit" class="cta green">Add to Cart</button>
+      <button type="button" class="cta grey" id="cancelPizzaBuilder">Cancel</button>
+    </div>
+  </form>
+</div>
