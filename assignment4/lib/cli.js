@@ -155,6 +155,14 @@ responders.orderInfo = function(str) {
       if (!err && orderData) {
         // Print their JSON object with text highlighting
         verticalSpace();
+
+        //converts the complex objects in items to simple strings to display properly
+        orderData.items.forEach((item, index) => {
+          item['size'] = item['size'].name + '(' + helpers.formatMoney(item['size'].price, '$') + ')';
+          item['crust'] = item['crust'].name + '(' + helpers.formatMoney(item['crust'].price, '$') + ')';
+          item['toppings'] = item['toppings'].join(', ');
+        });
+
         console.dir(orderData, {'colors': true});
         verticalSpace();
       }
