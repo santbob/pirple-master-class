@@ -123,13 +123,18 @@ responders.menu = function(str) {
 responders.orders = function(str) {
   verticalSpace();
   const arr = str.split('--');
+  //find the hrs supplied as input, if its invalid default it to 24hrs
   const hrs = typeof(arr[1]) == 'string' && !isNaN(parseInt(arr[1], 10))
     ? parseInt(arr[1], 10)
     : 24;
 
+  // find the start time from which orders to display
   const startTime = Date.now() - (hrs * 3600000);
+
+  // out the title for the query
   console.log(`Orders from last ${hrs} hours`);
   verticalSpace();
+  //fetch list of orders and console out only the files whose stats says they were created after starttime
   _data.list('orders', function(err, fileNames) {
     if (!err && fileNames) {
       fileNames.forEach(function(fileName) {
@@ -153,7 +158,6 @@ responders.orderInfo = function(str) {
     // Lookup the user
     _data.read('orders', orderId, function(err, orderData) {
       if (!err && orderData) {
-        // Print their JSON object with text highlighting
         verticalSpace();
 
         //converts the complex objects in items to simple strings to display properly
@@ -162,7 +166,7 @@ responders.orderInfo = function(str) {
           item['crust'] = item['crust'].name + '(' + helpers.formatMoney(item['crust'].price, '$') + ')';
           item['toppings'] = item['toppings'].join(', ');
         });
-
+        // log the whole data
         console.dir(orderData, {'colors': true});
         verticalSpace();
       }
@@ -174,13 +178,18 @@ responders.orderInfo = function(str) {
 responders.newUsers = function(str) {
   verticalSpace();
   const arr = str.split('--');
+  //find the hrs supplied as input, if its invalid default it to 24hrs
   const hrs = typeof(arr[1]) == 'string' && !isNaN(parseInt(arr[1], 10))
     ? parseInt(arr[1], 10)
     : 24;
 
+  // find the start time from which orders to display
   const startTime = Date.now() - (hrs * 3600000);
+
   console.log(`New Users from last ${hrs} hours`);
   verticalSpace();
+
+  //fetch list of users and console out only the files whose stats says they were created after starttime
   _data.list('users', function(err, userFileNames) {
     if (!err && userFileNames) {
       userFileNames.forEach(function(fileName) {
@@ -216,7 +225,7 @@ responders.userInfo = function(str) {
   }
 }
 
-// commands supports by the cli
+// command configuration to support the cli functions
 const commandsConfiguration = [
   {
     name: 'exit',
@@ -264,8 +273,8 @@ const commandsConfiguration = [
 // attach event handlers
 const supportedCommands = [];
 commandsConfiguration.forEach(function(command) {
-  supportedCommands.push(command.name);
-  e.on(command.name, command.responder);
+  supportedCommands.push(command.name); // also record the list of supported commands.
+  e.on(command.name, command.responder); // for each command in the configuration, attach event handler to call the responsder
 });
 
 // process each line of input and trigger corresponding event
