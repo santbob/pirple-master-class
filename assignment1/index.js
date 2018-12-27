@@ -8,6 +8,8 @@ const http = require('http');
 const https = require('https');
 const url = require('url');
 const fs = require('fs');
+const cluster = require('cluster');
+const os = require('os');
 
 // Setting up local config
 const config = {
@@ -68,24 +70,35 @@ const unifiedServer = function(req, resp) {
   });
 }
 
-// Instantiate the HTTP Server
-const httpServer = http.createServer(function(req, res) {
-  unifiedServer(req, res);
-});
-// Start the HTTP server
-httpServer.listen(config.httpPort, function() {
-  console.log('The HTTP server is running on port ' + config.httpPort);
-})
+initServer = function() {
+  // Instantiate the HTTP Server
+  const httpServer = http.createServer(function(req, res) {
+    unifiedServer(req, res);
+  });
+  // Start the HTTP server
+  httpServer.listen(config.httpPort, function() {
+    console.log('The HTTP server is running on port ' + config.httpPort);
+  })
 
-// Instantiate the HTTPS server
-var httpsServerOptions = {
-  'key': fs.readFileSync('./https/key.pem'),
-  'cert': fs.readFileSync('./https/cert.pem')
-};
-const httpsServer = https.createServer(httpsServerOptions, function(req, res) {
-  unifiedServer(req, res);
-});
-// Start the HTTPS server
-httpsServer.listen(config.httpsPort, function() {
-  console.log('The HTTPS server is running on port ' + config.httpsPort);
-});
+  // Instantiate the HTTPS server
+  var httpsServerOptions = {
+    'key': fs.readFileSync('./https/key.pem'),
+    'cert': fs.readFileSync('./https/cert.pem')
+  };
+  const httpsServer = https.createServer(httpsServerOptions, function(req, res) {
+    unifiedServer(req, res);
+  });
+  // Start the HTTPS server
+  httpsServer.listen(config.httpsPort, function() {
+    console.log('The HTTPS server is running on port ' + config.httpsPort);
+  });
+}
+
+// on the master cluster, just fork the cluster, othercase is when you start the server
+if (cluster.isMaster) {
+  // Fork the process
+  os.cpus().forEach((cpu) => cluster.fork());
+} else {
+  //start the server
+  initServer();
+}
